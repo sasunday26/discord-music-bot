@@ -1,0 +1,8 @@
+services:
+  discord-music-bot-service:
+    build:
+      context: .
+    volumes:
+      - .:/app
+    env_file:
+      - .env
