@@ -1,4 +1,5 @@
 from typing import cast
+import re
 
 import discord
 import yt_dlp  # type: ignore
@@ -15,9 +16,22 @@ class StreamingCommands(
         name="yt",
         description="play audio from a YouTube video",
     )
-    async def youtube(self, ctx: compat.ApplicationContext, url: str) -> None:
+    async def youtube(
+        self, ctx: compat.ApplicationContext, query: str
+    ) -> None:
         with yt_dlp.YoutubeDL(config.YDL_OPTIONS) as ytdl:
-            data = cast(dict, ytdl.extract_info(url, download=False))
+            query = (
+                query
+                if re.search(
+                    r"^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}"
+                    r"\\.[a-zA-Z0-9()]{1,6}\\b(?:["
+                    r"-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$",
+                    query,
+                )
+                else f"ytsearch:{query}"
+            )
+
+            data = cast(dict, ytdl.extract_info(query, download=False))
 
             if entries := data.get("entries"):
                 data = entries[0]
