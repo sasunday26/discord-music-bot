@@ -1,7 +1,6 @@
 from typing import cast
 
 import discord
-from discord.ext import commands
 
 
 class AudioSource(discord.AudioSource):
@@ -15,9 +14,9 @@ class VoiceClient(discord.VoiceClient):
     source: AudioSource
 
 
-class Context(commands.Context):
+class ApplicationContext(discord.ApplicationContext):
     """
-    Replaces discord.ext.commands.Context
+    Replaces discord.ApplicationContext
 
     Context.voice_client has a type VoiceProtocol,
     which is a concrete implementation of VoiceClient,

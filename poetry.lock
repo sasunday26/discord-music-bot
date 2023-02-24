@@ -584,28 +584,6 @@ files = [
 graph = ["objgraph (>=1.7.2)"]
 
 [[package]]
-name = "discord-py"
-version = "2.1.1"
-description = "A Python wrapper for the Discord API"
-category = "main"
-optional = false
-python-versions = ">=3.8.0"
-files = [
-    {file = "discord.py-2.1.1-py3-none-any.whl", hash = "sha256:b99fbf4ad74f007c680f33f5174738858146c99a2bc4f6d0e08ddbf93bc12c4d"},
-    {file = "discord.py-2.1.1.tar.gz", hash = "sha256:8258b7af641c532e9e33e186c7b867d9ff5575fe63a460b17ed55bd4fe082200"},
-]
-
-[package.dependencies]
-aiohttp = ">=3.7.4,<4"
-PyNaCl = {version = ">=1.3.0,<1.6", optional = true, markers = "extra == \"voice\""}
-
-[package.extras]
-docs = ["sphinx (==4.4.0)", "sphinxcontrib-trio (==1.1.2)", "sphinxcontrib-websupport", "typing-extensions (>=4.3,<5)"]
-speed = ["Brotli", "aiodns (>=1.1)", "cchardet (==2.1.7)", "orjson (>=3.5.4)"]
-test = ["coverage[toml]", "pytest", "pytest-asyncio", "pytest-cov", "pytest-mock", "typing-extensions (>=4.3,<5)"]
-voice = ["PyNaCl (>=1.3.0,<1.6)"]
-
-[[package]]
 name = "environs"
 version = "9.5.0"
 description = "simplified environment variable parsing"
@@ -1013,6 +991,27 @@ files = [
 [package.extras]
 docs = ["furo (>=2022.12.7)", "proselint (>=0.13)", "sphinx (>=6.1.3)", "sphinx-autodoc-typehints (>=1.22,!=1.23.4)"]
 test = ["appdirs (==1.4.4)", "covdefaults (>=2.2.2)", "pytest (>=7.2.1)", "pytest-cov (>=4)", "pytest-mock (>=3.10)"]
+
+[[package]]
+name = "py-cord"
+version = "2.4.0"
+description = "A Python wrapper for the Discord API"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "py-cord-2.4.0.tar.gz", hash = "sha256:2f35d92555ace5573b6349e010b4ad202603be0ab9f8afbc1d91b9cd1f203694"},
+    {file = "py_cord-2.4.0-py3-none-any.whl", hash = "sha256:2f81dcc3c8b06d7470a90a39b0245d85285ff4170c53720f28d494848d5d8dd5"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.6.0,<3.9.0"
+PyNaCl = {version = ">=1.3.0,<1.6", optional = true, markers = "extra == \"voice\""}
+
+[package.extras]
+docs = ["furo", "myst-parser (==0.18.1)", "sphinx (==5.3.0)", "sphinx-autodoc-typehints (==1.22)", "sphinx-copybutton (==0.5.1)", "sphinxcontrib-trio (==1.1.2)", "sphinxcontrib-websupport (==1.2.4)", "sphinxext-opengraph (==0.8.1)"]
+speed = ["aiohttp[speedups]", "orjson (>=3.5.4)"]
+voice = ["PyNaCl (>=1.3.0,<1.6)"]
 
 [[package]]
 name = "pycparser"
@@ -1451,4 +1450,4 @@ websockets = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "0252d73e9e46a69937c5c603443e02cbb34c179b9d8de2beced7b9e6a5e328a4"
+content-hash = "13470b377f28a4a670966f9f10e60dd95d6ec84a7851105fe9471442f726b971"
