@@ -20,6 +20,3 @@ def run_bot() -> None:
     add_cogs(bot)
 
     bot.run(config.BOT_TOKEN)
-
-
-run_bot()

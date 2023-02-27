@@ -1,5 +1,6 @@
-from typing import cast
+import logging
 import re
+from typing import cast
 
 import discord
 import yt_dlp  # type: ignore
@@ -12,6 +13,10 @@ class StreamingCommands(
     discord.Cog,
     guild_ids=config.GUILD_IDS,
 ):
+    def __init__(self, bot: discord.Bot, logger: logging.Logger) -> None:
+        self.bot = bot
+        self.logger = logger
+
     @discord.slash_command(
         name="yt",
         description="play audio from a YouTube video",
@@ -39,14 +44,16 @@ class StreamingCommands(
             player = discord.PCMVolumeTransformer(
                 discord.FFmpegPCMAudio(data["url"], **config.FFMPEG_OPTIONS)
             )
-            ctx.voice_client.play(
-                player, after=lambda e: print(e) if e else None
-            )
+            ctx.voice_client.play(player, after=self.audio_ended)
 
-            await ctx.respond(f"Now playing: {data['title']}")
+            await ctx.send(f"Now playing: {data['title']}")
+
+    def audio_ended(self, exception: Exception | None) -> None:
+        if exception:
+            self.logger.exception(exception)
 
     @youtube.before_invoke
-    async def connect_to_current_voice(
+    async def ensure_voice_channel(
         self, ctx: compat.ApplicationContext
     ) -> None:
         channel = await self.get_current_voice_channel(ctx)
@@ -69,7 +76,7 @@ class StreamingCommands(
 
         # await ctx.voice_client.move_to(channel)
 
-    @discord.slash_command()
+    @discord.slash_command(description="set audio volume (0 to 200)")
     async def volume(
         self, ctx: compat.ApplicationContext, volume: int
     ) -> None:
@@ -87,26 +94,28 @@ class StreamingCommands(
         ctx.voice_client.source.volume = volume / 100
         await ctx.respond(f"Volume set to {volume}%")
 
-    @discord.slash_command()
+    @discord.slash_command(description="pause currently playing audio")
     async def pause(self, ctx: compat.ApplicationContext) -> None:
         if ctx.voice_client.is_playing():
             ctx.voice_client.pause()
             await ctx.respond("Pausing...")
 
-    @discord.slash_command()
+    @discord.slash_command(description="resume paused audio")
     async def resume(self, ctx: compat.ApplicationContext) -> None:
         if ctx.voice_client.is_paused():
             ctx.voice_client.resume()
             await ctx.respond("Resuming...")
 
-    @discord.slash_command(name="shut_the_fuck_up")
+    @discord.slash_command(
+        name="shut_the_fuck_up", description="SHUT THE FUCK UP"
+    )
     async def leave(self, ctx: compat.ApplicationContext) -> None:
-        if ctx.voice_client:
-            await ctx.respond("Leaving...")
-            await ctx.voice_client.disconnect(force=False)
+        if not ctx.voice_client:
+            await ctx.respond("Not in a voice channel")
             return
 
-        await ctx.respond("Not in a voice channel")
+        await ctx.respond("Yes, sir")
+        await ctx.voice_client.disconnect(force=False)
 
     @volume.before_invoke
     @pause.before_invoke
@@ -138,7 +147,3 @@ class StreamingCommands(
             raise commands.CommandError("User is not in a voice channel")
 
         return cast(discord.VoiceChannel, voice_state.channel)
-
-
-def add_cogs(bot: discord.Bot) -> None:
-    bot.add_cog(StreamingCommands())

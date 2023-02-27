@@ -1,7 +1,7 @@
 services:
   discord-music-bot-service:
-    container_name: discord_music_bot
-    image: discord_music_bot
+    container_name: discord-music-bot
+    image: discord-music-bot
     deploy:
       replicas: 1
       restart_policy:
