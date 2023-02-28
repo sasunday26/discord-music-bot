@@ -20,16 +20,13 @@ class StreamingCommands(
         self, ctx: compat.ApplicationContext, query: str
     ) -> None:
         with yt_dlp.YoutubeDL(config.YDL_OPTIONS) as ytdl:
-            query = (
-                query
-                if re.search(
-                    "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}"
-                    "\\.[a-zA-Z0-9()]{1,6}\\b(?:["
-                    "-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$",
-                    query,
-                )
-                else f"ytsearch:{query}"
-            )
+            if not re.search(
+                "^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}"
+                "\\.[a-zA-Z0-9()]{1,6}\\b(?:["
+                "-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$",
+                query,
+            ):
+                query = f"ytsearch:{query}"
 
             data = cast(dict, ytdl.extract_info(query, download=False))
 
