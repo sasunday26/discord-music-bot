@@ -125,5 +125,8 @@ class StreamingCommands(BaseCog):
     ) -> None:
         self.logger.info(f"track {track} finished playing, because {reason}")
 
+        if player.queue.is_empty:
+            return
+
         if next_item := player.queue.get():
             await player.play(next_item)
