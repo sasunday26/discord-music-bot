@@ -71,7 +71,7 @@ class StreamingCommands(
             spotify.SpotifySearchType.album,
             spotify.SpotifySearchType.playlist,
         ):
-            await ctx.respond(f"Loading tracks from {url} into the queue")
+            await ctx.respond("Loading tracks into the queue")
 
             async for partial in spotify.SpotifyTrack.iterator(
                 query=query, partial_tracks=True, type=search_type
@@ -83,11 +83,19 @@ class StreamingCommands(
                 f"Loading done. Items in queue: {len(player.queue)}"
             )
 
-        else:
+        elif search_type == spotify.SpotifySearchType.track:
             track = await spotify.SpotifyTrack.search(
                 query=query, type=search_type, return_first=True
             )
             player.queue.put(track)
+            await ctx.respond(f"**{track.title}** added to queue")
+
+        else:
+            self.logger.error(
+                f"Couldn't play spotify track: "
+                f"url={url}, search_type={search_type}, query={query}"
+            )
+            await ctx.respond("Something went wrong")
 
     @queue_youtube.before_invoke
     @queue_spotify.before_invoke
