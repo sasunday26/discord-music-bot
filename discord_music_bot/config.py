@@ -1,5 +1,3 @@
-import logging
-
 from environs import Env
 
 env = Env()
@@ -11,9 +9,17 @@ with env.prefixed("DISCORD_"):
     COMMAND_PREFIX: str = env.str("COMMAND_PREFIX")
     GUILD_IDS: list[int] = env.list("GUILD_IDS", subcast=int)
 
-FFMPEG_OPTIONS: dict = env.json("FFMPEG_OPTIONS")
+with env.prefixed("WAVELINK_NODE_"):
+    WAVELINK_CONFIG: dict = {
+        "host": env.str("HOST"),
+        "port": env.int("PORT"),
+        "password": env.str("PASSWORD"),
+    }
 
-YDL_OPTIONS: dict = env.json("YOUTUBE_DL_OPTIONS")
-YDL_OPTIONS["logger"] = logging.Logger("youtube_dlp")
+with env.prefixed("SPOTIFY_"):
+    SPOTIFY_CONFIG: dict = {
+        "client_id": env.str("CLIENT_ID"),
+        "client_secret": env.str("CLIENT_SECRET"),
+    }
 
 LOGGING_CONFIG: dict = env.json("LOGGING_CONFIG")
