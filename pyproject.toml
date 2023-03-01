@@ -9,9 +9,10 @@ packages = [{include = "discord_music_bot"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-yt-dlp = "^2023.2.17"
 environs = "^9.5.0"
 py-cord = {extras = ["voice"], version = "^2.4.0"}
+validators = "^0.20.0"
+wavelink = "^1.3.5"
 
 
 [tool.poetry.group.dev.dependencies]

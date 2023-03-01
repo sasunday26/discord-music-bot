@@ -1,8 +1,11 @@
 services:
-  discord-music-bot-service:
-    container_name: discord-music-bot
+  bot:
+    container_name: bot
     image: discord-music-bot
+    depends_on:
+      - lavalink
     deploy:
+      &deploy_default
       replicas: 1
       restart_policy:
         condition: on-failure
@@ -11,3 +14,11 @@ services:
         window: 15s
     env_file:
       - .env
+
+  lavalink:
+    container_name: lavalink
+    image: fredboat/lavalink:9abd5d0
+    deploy:
+      <<: *deploy_default
+    volumes:
+      - ./lavalink.yaml:/opt/Lavalink/application.yaml
