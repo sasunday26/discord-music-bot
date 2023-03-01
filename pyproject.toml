@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "discord-music-bot"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
 authors = ["Andrew Yatsura <andrewyazura203@gmail.com>"]
 license = "MIT"
@@ -21,6 +21,7 @@ mypy = "^1.0.1"
 pylint = "^2.16.2"
 types-requests = "^2.28.11.13"
 pre-commit = "^3.1.1"
+pyupgrade = "^3.3.1"
 
 [build-system]
 requires = ["poetry-core"]
