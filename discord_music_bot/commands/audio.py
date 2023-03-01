@@ -1,26 +1,13 @@
-import logging
-
 import discord
 import wavelink
 
-from discord_music_bot import config
+from discord_music_bot.commands.base import BaseCog
 
 
-class AudioCommands(
-    discord.Cog,
-    guild_ids=config.GUILD_IDS,
-):
-    def __init__(
-        self,
-        bot: discord.Bot,
-        logger: logging.Logger,
-    ) -> None:
-        self.bot = bot
-        self.logger = logger
-
+class AudioCommands(BaseCog):
     @discord.slash_command(
         name="pause",
-        description="pause currently playing song, if any",
+        description="pause the currently playing song",
     )
     async def pause(self, ctx: discord.ApplicationContext) -> None:
         player: wavelink.Player = ctx.voice_client
@@ -38,7 +25,7 @@ class AudioCommands(
 
     @discord.slash_command(
         name="resume",
-        description="resume playing currently paused song, if any",
+        description="resume playing the currently paused song",
     )
     async def resume(self, ctx: discord.ApplicationContext) -> None:
         player: wavelink.Player = ctx.voice_client
@@ -55,7 +42,7 @@ class AudioCommands(
         await ctx.respond("Resuming playback")
 
     @discord.slash_command(
-        name="shut_the_fuck_up", description="disconnect bot"
+        name="shut_the_fuck_up", description="disconnect the bot"
     )
     async def leave(self, ctx: discord.ApplicationContext) -> None:
         player: wavelink.Player = ctx.voice_client
@@ -69,7 +56,7 @@ class AudioCommands(
 
     @discord.slash_command(
         name="volume",
-        description="set playback volume in range 0-1000",
+        description="set the volume in the range 0-1000",
     )
     async def set_volume(
         self, ctx: discord.ApplicationContext, *, volume: int

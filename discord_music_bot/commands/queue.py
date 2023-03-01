@@ -1,33 +1,22 @@
-import logging
 from datetime import timedelta
 
 import discord
 import wavelink
 
-from discord_music_bot import config
+from discord_music_bot.commands.base import BaseCog
 
 
-class QueueCommands(
-    discord.Cog,
-    guild_ids=config.GUILD_IDS,
-):
-    def __init__(
-        self,
-        bot: discord.Bot,
-        logger: logging.Logger,
-    ) -> None:
-        self.bot = bot
-        self.logger = logger
-
+class QueueCommands(BaseCog):
     @discord.slash_command(
-        name="np",
-        description="get information about currently playing song, if any",
+        name="now_playing",
+        description="get information about the currently playing song",
     )
     async def get_now_playing(self, ctx: discord.ApplicationContext) -> None:
         player: wavelink.Player = ctx.voice_client
 
         if not player or not player.track:
             await ctx.respond("Not playing anything right now")
+            return
 
         track = player.track
 
@@ -70,7 +59,7 @@ class QueueCommands(
 
         await ctx.respond(embed=embed)
 
-    @discord.slash_command(name="clear", description="clear queue")
+    @discord.slash_command(name="clear", description="clear the queue")
     async def clear_queue(self, ctx: discord.ApplicationContext) -> None:
         player: wavelink.Player = ctx.voice_client
 

@@ -1,27 +1,13 @@
-import logging
-
 import discord
 import validators
 import wavelink
 from wavelink.ext import spotify
 
 from discord_music_bot import config
+from discord_music_bot.commands.base import BaseCog
 
 
-class StreamingCommands(
-    discord.Cog,
-    guild_ids=config.GUILD_IDS,
-):
-    def __init__(
-        self,
-        bot: discord.Bot,
-        logger: logging.Logger,
-    ) -> None:
-        self.bot = bot
-        self.logger = logger
-
-        bot.loop.create_task(self.setup())
-
+class StreamingCommands(BaseCog):
     async def setup(self) -> None:
         await self.bot.wait_until_ready()
 
