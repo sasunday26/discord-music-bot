@@ -2,10 +2,9 @@ import re
 from datetime import timedelta
 
 import discord
-import wavelink
 
 from discord_music_bot.commands.base import BaseCog
-from discord_music_bot.helpers import format_timedelta
+from discord_music_bot.helpers import format_timedelta, get_current_player
 
 
 class AudioCommands(BaseCog):
@@ -14,11 +13,7 @@ class AudioCommands(BaseCog):
         description="pause the currently playing song",
     )
     async def pause(self, ctx: discord.ApplicationContext) -> None:
-        player: wavelink.Player = ctx.voice_client
-
-        if not player:
-            await ctx.respond("Not connected to a voice channel")
-            return
+        player = await get_current_player(ctx)
 
         if not player.is_playing():
             await ctx.respond("Not playing")
@@ -32,11 +27,7 @@ class AudioCommands(BaseCog):
         description="resume playing the currently paused song",
     )
     async def resume(self, ctx: discord.ApplicationContext) -> None:
-        player: wavelink.Player = ctx.voice_client
-
-        if not player:
-            await ctx.respond("Not connected to a voice channel")
-            return
+        player = await get_current_player(ctx)
 
         if not player.is_paused():
             await ctx.respond("Not paused")
@@ -49,11 +40,7 @@ class AudioCommands(BaseCog):
         name="shut_the_fuck_up", description="disconnect the bot"
     )
     async def leave(self, ctx: discord.ApplicationContext) -> None:
-        player: wavelink.Player = ctx.voice_client
-
-        if not player:
-            await ctx.respond("Not connected to a voice channel")
-            return
+        player = await get_current_player(ctx)
 
         await player.disconnect()
         await ctx.respond("Ok")
@@ -65,11 +52,7 @@ class AudioCommands(BaseCog):
     async def set_volume(
         self, ctx: discord.ApplicationContext, *, volume: int
     ) -> None:
-        player: wavelink.Player = ctx.voice_client
-
-        if not player:
-            await ctx.respond("Not connected to a voice channel")
-            return
+        player = await get_current_player(ctx)
 
         if not 0 <= volume <= 1000:
             await ctx.respond("Volume must be in range 0-1000")
@@ -85,9 +68,9 @@ class AudioCommands(BaseCog):
     async def seek(
         self, ctx: discord.ApplicationContext, *, position: str
     ) -> None:
-        player: wavelink.Player = ctx.voice_client
+        player = await get_current_player(ctx)
 
-        if not player or not player.track:
+        if not player.track:
             await ctx.respond("Not playing anything right now")
             return
 

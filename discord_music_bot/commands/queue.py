@@ -1,10 +1,9 @@
 from datetime import timedelta
 
 import discord
-import wavelink
 
 from discord_music_bot.commands.base import BaseCog
-from discord_music_bot.helpers import format_timedelta
+from discord_music_bot.helpers import format_timedelta, get_current_player
 
 
 class QueueCommands(BaseCog):
@@ -13,9 +12,9 @@ class QueueCommands(BaseCog):
         description="get information about the currently playing song",
     )
     async def get_now_playing(self, ctx: discord.ApplicationContext) -> None:
-        player: wavelink.Player = ctx.voice_client
+        player = await get_current_player(ctx)
 
-        if not player or not player.track:
+        if not player.track:
             await ctx.respond("Not playing anything right now")
             return
 
@@ -43,11 +42,7 @@ class QueueCommands(BaseCog):
         name="queue", description="get list of tracks in the queue"
     )
     async def get_queue(self, ctx: discord.ApplicationContext) -> None:
-        player: wavelink.Player = ctx.voice_client
-
-        if not player:
-            await ctx.respond("Not connected to a voice channel")
-            return
+        player = await get_current_player(ctx)
 
         if player.queue.is_empty:
             await ctx.respond("Queue is empty")
@@ -64,11 +59,7 @@ class QueueCommands(BaseCog):
 
     @discord.slash_command(name="clear", description="clear the queue")
     async def clear_queue(self, ctx: discord.ApplicationContext) -> None:
-        player: wavelink.Player = ctx.voice_client
-
-        if not player:
-            await ctx.respond("Not connected to a voice channel")
-            return
+        player = await get_current_player(ctx)
 
         player.queue.clear()
         await ctx.respond("Queue cleared")
