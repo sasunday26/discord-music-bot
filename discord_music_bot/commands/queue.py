@@ -4,6 +4,7 @@ import discord
 import wavelink
 
 from discord_music_bot.commands.base import BaseCog
+from discord_music_bot.helpers import format_timedelta
 
 
 class QueueCommands(BaseCog):
@@ -27,9 +28,11 @@ class QueueCommands(BaseCog):
         if track.author:
             embed.add_field(name="Author", value=track.author)
 
-        embed.add_field(
-            name="Duration", value=str(timedelta(seconds=track.length))
-        )
+        position = timedelta(seconds=player.position)
+        embed.add_field(name="Position", value=format_timedelta(position))
+
+        duration = timedelta(seconds=track.length)
+        embed.add_field(name="Duration", value=format_timedelta(duration))
 
         if track.uri:
             embed.add_field(name="Link", value=track.uri)

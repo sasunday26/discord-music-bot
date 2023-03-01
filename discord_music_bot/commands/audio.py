@@ -1,7 +1,11 @@
+import re
+from datetime import timedelta
+
 import discord
 import wavelink
 
 from discord_music_bot.commands.base import BaseCog
+from discord_music_bot.helpers import format_timedelta
 
 
 class AudioCommands(BaseCog):
@@ -73,3 +77,38 @@ class AudioCommands(BaseCog):
 
         await player.set_volume(volume)
         await ctx.respond(f"Volume set to {volume}%")
+
+    @discord.slash_command(
+        name="seek",
+        description="enter position in the song you want to skip to",
+    )
+    async def seek(
+        self, ctx: discord.ApplicationContext, *, position: str
+    ) -> None:
+        player: wavelink.Player = ctx.voice_client
+
+        if not player or not player.track:
+            await ctx.respond("Not playing anything right now")
+            return
+
+        matches = re.match(r"^(?:(?:(\d+):)?(\d+):)?(\d+)$", position)
+
+        if not matches:
+            await ctx.respond("Invalid position format")
+            return
+
+        hours, minutes, seconds = (
+            int(m) if m else 0 for m in matches.groups()
+        )
+        position_td = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+
+        duration = timedelta(seconds=player.track.length)
+        if duration < position_td:
+            await ctx.respond(
+                "Track's total length is "
+                f"{format_timedelta(duration)}, that is too far"
+            )
+            return
+
+        await player.seek(position_td.total_seconds() * 1000)
+        await ctx.respond(f"Seeking to {format_timedelta(position_td)}")
