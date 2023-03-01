@@ -53,6 +53,9 @@ poetry-check.............................................................Passed
 
 ## Running the project
 
+Before running the project, you have to create configuration files.
+There are examples in the repo: `.env.example` and `lavalink.example.yaml`, so you can copy those and fill in the data.
+
 ### For development
 
 To run the project locally, there is a separate Docker compose configuration in `docker-compose.dev.yaml`.
