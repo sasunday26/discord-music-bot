@@ -69,17 +69,19 @@ class QueueCommands(BaseCog):
     )
     async def play_next(self, ctx: discord.ApplicationContext) -> None:
         player = await get_current_player(ctx)
+        skipped_item = player.track
 
-        if skipped_item := player.track:
-            if player.queue.is_empty:
-                await player.stop()
-                await ctx.respond(f"Skipping **{skipped_item.title}**")
-                await ctx.send("This was the last one in queue")
-            else:
-                current_item = player.queue.get()
-
-                await player.play(current_item)
-                await ctx.respond(f"Skipping **{skipped_item.title}**")
-                await ctx.send(f"Playing **{current_item.title}**")
-        else:
+        if not skipped_item:
             await ctx.respond("Nothing to skip")
+            return
+
+        if player.queue.is_empty:
+            await player.stop()
+            await ctx.respond(f"Skipping **{skipped_item.title}**")
+            await ctx.send("This was the last one in queue")
+        else:
+            current_item = player.queue.get()
+
+            await player.play(current_item)
+            await ctx.respond(f"Skipping **{skipped_item.title}**")
+            await ctx.send(f"Playing **{current_item.title}**")
