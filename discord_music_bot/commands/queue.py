@@ -80,4 +80,4 @@ class QueueCommands(BaseCog):
 
             await player.play(current_item)
             await ctx.respond(f"Skipping **{skipped_item_title}**")
-            await ctx.send(f"\nPlaying **{current_item.title}**")
+            await ctx.send(f"Playing **{current_item.title}**")
