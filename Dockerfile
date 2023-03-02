@@ -4,10 +4,6 @@ FROM python:3.11-slim-bullseye
 
 WORKDIR /app
 
-RUN ["apt", "update"]
-RUN ["apt", "upgrade", "-y"]
-RUN ["apt", "install", "-y", "ffmpeg"]
-
 RUN ["pip", "install", "poetry"]
 
 COPY pyproject.toml ./
