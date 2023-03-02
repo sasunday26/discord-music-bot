@@ -2,6 +2,7 @@ import re
 from datetime import timedelta
 
 import discord
+import wavelink
 
 from discord_music_bot.commands.base import BaseCog
 from discord_music_bot.helpers import format_timedelta, get_current_player
@@ -35,7 +36,7 @@ class AudioCommands(BaseCog):
         await ctx.respond("Resuming playback")
 
     @discord.slash_command(
-        name="shut_the_fuck_up", description="disconnect the bot"
+        name="shut_the_fuck_up", description="SHUT THE FUCK UP"
     )
     async def leave(self, ctx: discord.ApplicationContext) -> None:
         player = await get_current_player(ctx)
@@ -102,3 +103,63 @@ class AudioCommands(BaseCog):
 
         await player.seek(position_td.total_seconds() * 1000)
         await ctx.respond(f"Seeking to {format_timedelta(position_td)}")
+
+    @discord.slash_command(
+        name="equalizer",
+        description="add equalizer filter",
+    )
+    @discord.option(
+        "settings",
+        description=(
+            "band:gain separated by space: 1:0.75 2:0.8 3:0.5 "
+            "band range: 0-15, gain range: -0.25-1.0"
+        ),
+    )
+    async def add_equalizer(
+        self, ctx: discord.ApplicationContext, *, settings: str
+    ) -> None:
+        player = await get_current_player(ctx)
+
+        bands = []
+        for param in settings.strip().split(" "):
+            if not param:
+                continue
+
+            band, gain = param.split(":")
+            bands.append((int(band), float(gain)))
+
+        try:
+            await player.set_filter(
+                wavelink.Filter(equalizer=wavelink.Equalizer(bands=bands)),
+                seek=True,
+            )
+        except ValueError:
+            await ctx.respond("Invalid value")
+            return
+
+        await ctx.respond("Equalizer added")
+
+    @discord.slash_command(name="speed", description="set playback speed")
+    @discord.option(
+        "speed", float, min_value=0.0, description="playback speed multiplier"
+    )
+    @discord.option(
+        "pitch",
+        float,
+        default=1.0,
+        min_value=0.0,
+        description="track pitch multiplier",
+    )
+    async def set_speed(
+        self, ctx: discord.ApplicationContext, *, speed: float, pitch: float
+    ) -> None:
+        player = await get_current_player(ctx)
+
+        await player.set_filter(
+            wavelink.Filter(
+                timescale=wavelink.Timescale(speed=speed, pitch=pitch)
+            ),
+            seek=True,
+        )
+
+        await ctx.respond("New speed applied")

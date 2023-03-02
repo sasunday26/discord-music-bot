@@ -118,10 +118,7 @@ class StreamingCommands(BaseCog):
     async def start_playing(self, ctx: discord.ApplicationContext) -> None:
         player: wavelink.Player = ctx.voice_client
 
-        if player.is_playing():
-            return
-
-        if player.queue.is_empty:
+        if player.is_playing() or player.queue.is_empty:
             return
 
         if next_item := player.queue.get():
