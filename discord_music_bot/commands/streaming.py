@@ -130,8 +130,7 @@ class StreamingCommands(BaseCog):
     ) -> None:
         self.logger.info(f"track {track} finished playing, because {reason}")
 
-        if player.queue.is_empty:
+        if player.queue.is_empty or reason == "REPLACED":
             return
 
-        if reason != "REPLACED":
-            await player.play(player.queue.get())
+        await player.play(player.queue.get())
