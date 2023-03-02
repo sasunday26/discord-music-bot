@@ -120,7 +120,13 @@ class AudioCommands(BaseCog):
     ) -> None:
         player = await get_current_player(ctx)
 
-        bands = []
+        # bands is list of tuples that contain band number and its gain,
+        # where band is a frequency and gain is its amplification factor.
+        # the lower the band number, the lower the frequency
+
+        # for example: [(1, 0.75), (2, 0.8), (3, 0.5)]
+        # in this example, three low frequency bands are amplified
+        bands: list[tuple[int, float]] = []
         for param in settings.strip().split(" "):
             if not param:
                 continue
