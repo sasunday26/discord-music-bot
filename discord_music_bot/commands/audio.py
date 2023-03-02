@@ -50,7 +50,7 @@ class AudioCommands(BaseCog):
         int,
         min_value=0,
         max_value=1000,
-        description="number from 0 to 1000",
+        description="percentage from 0 to 1000",
     )
     async def set_volume(
         self, ctx: discord.ApplicationContext, *, volume: int
