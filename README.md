@@ -73,7 +73,7 @@ $ docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up
 In production you'll have to build the image and then run it using Docker Compose:
 
 ```bash
-$ docker build --tag discord_music_bot .
+$ docker build --tag discord-music-bot .
 
 [+] Building Xs (X/X) FINISHED
 ...
