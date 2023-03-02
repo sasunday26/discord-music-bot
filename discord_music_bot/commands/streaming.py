@@ -49,13 +49,9 @@ class StreamingCommands(BaseCog):
         self, ctx: discord.ApplicationContext, *, url: str
     ) -> None:
         player: wavelink.Player = ctx.voice_client
-
-        if not validators.url(url):
-            await ctx.respond("Invalid URL provided")
-            return
-
         decoded = spotify.decode_url(url)
-        if decoded is None:
+
+        if not validators.url(url) or decoded is None:
             await ctx.respond("Invalid URL provided")
             return
 
