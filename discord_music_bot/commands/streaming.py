@@ -20,9 +20,10 @@ class StreamingCommands(BaseCog):
         )
 
     @discord.slash_command(
-        name="yt",
+        name="youtube",
         description="play audio from a YouTube video",
     )
+    @discord.option("query", str, description="search request or URL")
     async def queue_youtube(
         self, ctx: discord.ApplicationContext, *, query: str
     ) -> None:
@@ -33,8 +34,16 @@ class StreamingCommands(BaseCog):
         )
 
     @discord.slash_command(
-        name="sp",
+        name="spotify",
         description="play spotify tracks, playlists and albums from a URL",
+    )
+    @discord.option(
+        "url",
+        str,
+        description=(
+            "spotify URL "
+            "(https://open.spotify.com/track|album|playlist/...)"
+        ),
     )
     async def queue_spotify(
         self, ctx: discord.ApplicationContext, *, url: str

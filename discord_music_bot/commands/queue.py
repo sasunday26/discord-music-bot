@@ -64,7 +64,9 @@ class QueueCommands(BaseCog):
         player.queue.clear()
         await ctx.respond("Queue cleared")
 
-    @discord.slash_command(name="next", description="play next song in queue")
+    @discord.slash_command(
+        name="next_song", description="play next song in queue"
+    )
     async def play_next(self, ctx: discord.ApplicationContext) -> None:
         player = await get_current_player(ctx)
 

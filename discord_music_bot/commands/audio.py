@@ -9,8 +9,7 @@ from discord_music_bot.helpers import format_timedelta, get_current_player
 
 class AudioCommands(BaseCog):
     @discord.slash_command(
-        name="pause",
-        description="pause the currently playing song",
+        name="pause", description="pause the currently playing song"
     )
     async def pause(self, ctx: discord.ApplicationContext) -> None:
         player = await get_current_player(ctx)
@@ -23,8 +22,7 @@ class AudioCommands(BaseCog):
         await ctx.respond("Paused playback")
 
     @discord.slash_command(
-        name="resume",
-        description="resume playing the currently paused song",
+        name="resume", description="resume playing the currently paused song"
     )
     async def resume(self, ctx: discord.ApplicationContext) -> None:
         player = await get_current_player(ctx)
@@ -45,9 +43,13 @@ class AudioCommands(BaseCog):
         await player.disconnect()
         await ctx.respond("Ok")
 
-    @discord.slash_command(
-        name="volume",
-        description="set the volume in the range 0-1000",
+    @discord.slash_command(name="volume", description="set audio volume")
+    @discord.option(
+        "volume",
+        int,
+        min_value=0,
+        max_value=1000,
+        description="number from 0 to 1000",
     )
     async def set_volume(
         self, ctx: discord.ApplicationContext, *, volume: int
@@ -62,8 +64,10 @@ class AudioCommands(BaseCog):
         await ctx.respond(f"Volume set to {volume}%")
 
     @discord.slash_command(
-        name="seek",
-        description="enter position in the song you want to skip to",
+        name="seek", description="seek to a specified position"
+    )
+    @discord.option(
+        "position", str, description="timestamp (4:20) or seconds (260)"
     )
     async def seek(
         self, ctx: discord.ApplicationContext, *, position: str
