@@ -65,10 +65,12 @@ class QueueCommands(BaseCog):
         await ctx.respond("Queue cleared")
 
     @discord.slash_command(
-        name="next_song", description="play next song in queue"
+        name="skip", description="skip currently playing song"
     )
     async def play_next(self, ctx: discord.ApplicationContext) -> None:
         player = await get_current_player(ctx)
 
+        # .stop() will trigger on_wavelink_track_end event
+        # that automatically starts playing next track
         await player.stop()
-        await ctx.respond("Playing next track...")
+        await ctx.respond("Skipping current track...")
