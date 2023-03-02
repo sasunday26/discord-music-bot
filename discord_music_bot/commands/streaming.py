@@ -29,9 +29,12 @@ class StreamingCommands(BaseCog):
     ) -> None:
         player: wavelink.Player = ctx.voice_client
 
-        player.queue.put(
-            await wavelink.YouTubeTrack.search(query=query, return_first=True)
+        track = await wavelink.YouTubeTrack.search(
+            query=query, return_first=True
         )
+
+        player.queue.put(track)
+        await ctx.respond(f"**{track}** added to queue")
 
     @discord.slash_command(
         name="spotify",
