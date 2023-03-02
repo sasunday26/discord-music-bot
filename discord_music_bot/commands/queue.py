@@ -73,15 +73,11 @@ class QueueCommands(BaseCog):
 
         if player.queue.is_empty:
             await player.stop()
-            await ctx.respond(
-                f"Skipping **{skipped_item_title}**"
-                "\nThis was the last one in queue"
-            )
+            await ctx.respond(f"Skipping **{skipped_item_title}**")
+            await ctx.send("This was the last one in queue")
         else:
             current_item = player.queue.get()
 
             await player.play(current_item)
-            await ctx.respond(
-                f"Skipping **{skipped_item_title}**"
-                f"\nPlaying **{current_item.title}**"
-            )
+            await ctx.respond(f"Skipping **{skipped_item_title}**")
+            await ctx.send(f"\nPlaying **{current_item.title}**")
