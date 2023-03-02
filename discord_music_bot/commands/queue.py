@@ -69,8 +69,18 @@ class QueueCommands(BaseCog):
     )
     async def play_next(self, ctx: discord.ApplicationContext) -> None:
         player = await get_current_player(ctx)
+        skipped_item_title = player.track.title
 
-        # .stop() will trigger on_wavelink_track_end event
-        # that automatically starts playing next track
-        await player.stop()
-        await ctx.respond("Skipping current track...")
+        if not player.queue.is_empty:
+            current_item = player.queue.get()
+
+            await player.play(current_item)
+            await ctx.respond(
+                f"Skipping: **{skipped_item_title}**"
+                f"\nCurrent: **{current_item.title}**"
+            )
+        else:
+            await player.stop()
+            await ctx.respond(
+                f"Skipping: **{skipped_item_title}**\nThis was the last one"
+            )

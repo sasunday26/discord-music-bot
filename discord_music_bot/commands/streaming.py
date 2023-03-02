@@ -133,5 +133,5 @@ class StreamingCommands(BaseCog):
         if player.queue.is_empty:
             return
 
-        if next_item := player.queue.get():
-            await player.play(next_item)
+        if reason != "REPLACED":
+            await player.play(player.queue.get())
