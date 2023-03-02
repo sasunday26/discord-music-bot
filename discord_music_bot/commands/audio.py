@@ -74,6 +74,9 @@ class AudioCommands(BaseCog):
             await ctx.respond("Not playing anything right now")
             return
 
+        # matches \d+:\d+:\d+, \d+:\d+ and \d+
+        # this allows entering position as a number of seconds.
+        # for example, 300 will be treated as 5 minutes.
         matches = re.match(r"^(?:(?:(\d+):)?(\d+):)?(\d+)$", position)
 
         if not matches:
