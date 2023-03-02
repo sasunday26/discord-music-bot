@@ -16,8 +16,8 @@ def run_bot() -> None:
     intents.message_content = True
 
     bot = discord.Bot(
-        command_prefix=config.COMMAND_PREFIX,
         intents=intents,
+        command_prefix=config.COMMAND_PREFIX,
     )
 
     add_cogs(bot, logger)
