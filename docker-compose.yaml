@@ -1,6 +1,5 @@
 services:
   bot:
-    container_name: bot
     image: discord-music-bot
     depends_on:
       - lavalink
@@ -16,7 +15,6 @@ services:
       - .env
 
   lavalink:
-    container_name: lavalink
     image: fredboat/lavalink:9abd5d0
     deploy:
       <<: *deploy_default
