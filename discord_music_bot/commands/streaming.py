@@ -120,9 +120,10 @@ class StreamingCommands(BaseCog):
         if player.is_playing() or player.queue.is_empty:
             return
 
-        if next_item := player.queue.get():
-            await player.play(next_item)
-            await ctx.send(f"Playing **{next_item.title}**")
+        next_item = player.queue.get()
+
+        await player.play(next_item)
+        await ctx.send(f"Playing **{next_item.title}**")
 
     @discord.Cog.listener()
     async def on_wavelink_track_end(
