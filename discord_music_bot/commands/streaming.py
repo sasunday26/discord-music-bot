@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import discord
 import validators
 import wavelink
@@ -66,10 +68,18 @@ class StreamingCommands(BaseCog):
             spotify.SpotifySearchType.playlist,
         ):
             await ctx.respond("Loading tracks into the queue")
-
-            async for partial in spotify.SpotifyTrack.iterator(
+            tracks: Iterable[
+                wavelink.PartialTrack
+            ] = spotify.SpotifyTrack.iterator(
                 query=query, partial_tracks=True, type=search_type
-            ):
+            )
+
+            if not player.is_playing():
+                first_item = await anext(tracks)
+                await player.play(first_item)
+                await ctx.send(f"Playing **{first_item.title}**")
+
+            async for partial in tracks:
                 player.queue.put(partial)
                 await ctx.send(f"**{partial.title}** added to queue")
 
