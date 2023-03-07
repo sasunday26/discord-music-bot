@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import AsyncIterable
 
 import discord
 import validators
@@ -68,7 +68,7 @@ class StreamingCommands(BaseCog):
             spotify.SpotifySearchType.playlist,
         ):
             await ctx.respond("Loading tracks into the queue")
-            tracks: Iterable[
+            tracks: AsyncIterable[
                 wavelink.PartialTrack
             ] = spotify.SpotifyTrack.iterator(
                 query=query, partial_tracks=True, type=search_type
