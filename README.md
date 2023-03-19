@@ -59,29 +59,11 @@ poetry-check.............................................................Passed
 Before running the project, you have to create configuration files.
 There are examples in the repo: `.env.example` and `lavalink.example.yaml`, so you can copy those and fill in the data.
 
-### For development
-
-To run the project locally, there is a separate Docker compose configuration in `docker-compose.dev.yaml`.
-You can run the project using base and `dev` compose configs:
+To run the project locally, there is a Docker compose configuration in `docker-compose.dev.yaml`.
+You can run the project using:
 
 ```bash
-$ docker compose -f docker-compose.yaml -f docker-compose.dev.yaml up
-
-[+] Running X/X
-...
-```
-
-### In production
-
-In production you'll have to build the image and then run it using Docker Compose:
-
-```bash
-$ docker build --tag discord-music-bot .
-
-[+] Building Xs (X/X) FINISHED
-...
-
-$ docker compose up -d
+$ docker compose -f docker-compose.dev.yaml up
 
 [+] Running X/X
 ...
