@@ -5,4 +5,17 @@ services:
       tags:
         - "discord-music-bot"
     volumes:
-      - .:/app
+      - .:/code
+    depends_on:
+      lavalink:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  lavalink:
+    image: fredboat/lavalink:9abd5d0
+    volumes:
+      - ./lavalink.yaml:/opt/Lavalink/application.yaml
+    healthcheck:
+      test: 'echo lavalink'
+      interval: 1s
