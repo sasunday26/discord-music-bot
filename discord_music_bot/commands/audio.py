@@ -3,80 +3,76 @@ from datetime import timedelta
 
 import discord
 import wavelink
+from discord import app_commands
 
-from discord_music_bot.commands.base import BaseCog
-from discord_music_bot.helpers import format_timedelta, get_current_player
+from ..helpers import format_timedelta, get_current_player
 
 
-class AudioCommands(BaseCog):
-    @discord.slash_command(
-        name="pause", description="pause the currently playing song"
-    )
-    async def pause(self, ctx: discord.ApplicationContext) -> None:
-        player = await get_current_player(ctx)
+def add_audio_commands(tree: app_commands.CommandTree):
+    @tree.command(name="pause", description="pause the currently playing song")
+    async def pause(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
 
         if not player.is_playing():
-            await ctx.respond("Not playing")
+            await interaction.response.send_message("Not playing")
             return
 
         await player.pause()
-        await ctx.respond("Paused playback")
+        await interaction.response.send_message("Paused playback")
 
-    @discord.slash_command(
+    @tree.command(
         name="resume", description="resume playing the currently paused song"
     )
-    async def resume(self, ctx: discord.ApplicationContext) -> None:
+    async def resume(interaction: discord.Interaction) -> None:
         player = await get_current_player(ctx)
 
         if not player.is_paused():
-            await ctx.respond("Not paused")
+            await interaction.response.send_message("Not paused")
             return
 
         await player.resume()
-        await ctx.respond("Resuming playback")
+        await interaction.response.send_message("Resuming playback")
 
-    @discord.slash_command(
-        name="shut_the_fuck_up", description="SHUT THE FUCK UP"
-    )
-    async def leave(self, ctx: discord.ApplicationContext) -> None:
-        player = await get_current_player(ctx)
+    @tree.command(name="shut_the_fuck_up", description="SHUT THE FUCK UP")
+    async def leave(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
 
         await player.disconnect()
-        await ctx.respond("Ok")
+        await interaction.response.send_message("Ok")
 
-    @discord.slash_command(name="volume", description="set audio volume")
-    @discord.option(
-        "volume",
-        int,
-        min_value=0,
-        max_value=1000,
-        description="percentage from 0 to 1000",
-    )
+    @tree.command(name="volume", description="set audio volume")
+    # @discord.option(
+    #     "volume",
+    #     int,
+    #     min_value=0,
+    #     max_value=1000,
+    #     description="percentage from 0 to 1000",
+    # )
     async def set_volume(
-        self, ctx: discord.ApplicationContext, *, volume: int
+        interaction: discord.Interaction, *, volume: int
     ) -> None:
         player = await get_current_player(ctx)
 
         if not 0 <= volume <= 1000:
-            await ctx.respond("Volume must be in range 0-1000")
+            await interaction.response.send_message(
+                "Volume must be in range 0-1000"
+            )
             return
 
         await player.set_volume(volume)
-        await ctx.respond(f"Volume set to {volume}%")
+        await interaction.response.send_message(f"Volume set to {volume}%")
 
-    @discord.slash_command(
-        name="seek", description="seek to a specified position"
-    )
-    @discord.option(
-        "position", str, description="timestamp (4:20) or seconds (260)"
-    )
-    async def seek(
-        self, ctx: discord.ApplicationContext, *, position: str
-    ) -> None:
+    @tree.command(name="seek", description="seek to a specified position")
+    # @discord.option(
+    #     "position", str, description="timestamp (4:20) or seconds (260)"
+    # )
+    async def seek(interaction: discord.Interaction, *, position: str) -> None:
         player = await get_current_player(ctx)
 
         if not player.track:
-            await ctx.respond("Not playing anything right now")
+            await interaction.response.send_message(
+                "Not playing anything right now"
+            )
             return
 
         # matches \d+:\d+:\d+, \d+:\d+ and \d+
@@ -85,7 +81,7 @@ class AudioCommands(BaseCog):
         matches = re.match(r"^(?:(?:(\d+):)?(\d+):)?(\d+)$", position)
 
         if not matches:
-            await ctx.respond("Invalid position format")
+            await interaction.response.send_message("Invalid position format")
             return
 
         hours, minutes, seconds = (
@@ -95,28 +91,30 @@ class AudioCommands(BaseCog):
 
         duration = timedelta(seconds=player.track.length)
         if duration < position_td:
-            await ctx.respond(
+            await interaction.response.send_message(
                 "Track's total length is "
                 f"{format_timedelta(duration)}, that is too far"
             )
             return
 
         await player.seek(position_td.total_seconds() * 1000)
-        await ctx.respond(f"Seeking to {format_timedelta(position_td)}")
+        await interaction.response.send_message(
+            f"Seeking to {format_timedelta(position_td)}"
+        )
 
-    @discord.slash_command(
+    @tree.command(
         name="equalizer",
         description="add equalizer filter",
     )
-    @discord.option(
-        "settings",
-        description=(
-            "band:gain separated by space: 1:0.75 2:0.8 3:0.5 "
-            "band range: 0-15, gain range: -0.25-1.0"
-        ),
-    )
+    # @discord.option(
+    #     "settings",
+    #     description=(
+    #         "band:gain separated by space: 1:0.75 2:0.8 3:0.5 "
+    #         "band range: 0-15, gain range: -0.25-1.0"
+    #     ),
+    # )
     async def add_equalizer(
-        self, ctx: discord.ApplicationContext, *, settings: str
+        interaction: discord.Interaction, *, settings: str
     ) -> None:
         player = await get_current_player(ctx)
 
@@ -140,24 +138,24 @@ class AudioCommands(BaseCog):
                 seek=True,
             )
         except ValueError:
-            await ctx.respond("Invalid value")
+            await interaction.response.send_message("Invalid value")
             return
 
-        await ctx.respond("Equalizer added")
+        await interaction.response.send_message("Equalizer added")
 
-    @discord.slash_command(name="speed", description="set playback speed")
-    @discord.option(
-        "speed", float, min_value=0.0, description="playback speed multiplier"
-    )
-    @discord.option(
-        "pitch",
-        float,
-        default=1.0,
-        min_value=0.0,
-        description="track pitch multiplier",
-    )
+    @tree.command(name="speed", description="set playback speed")
+    # @discord.option(
+    #     "speed", float, min_value=0.0, description="playback speed multiplier"
+    # )
+    # @discord.option(
+    #     "pitch",
+    #     float,
+    #     default=1.0,
+    #     min_value=0.0,
+    #     description="track pitch multiplier",
+    # )
     async def set_speed(
-        self, ctx: discord.ApplicationContext, *, speed: float, pitch: float
+        interaction: discord.Interaction, *, speed: float, pitch: float
     ) -> None:
         player = await get_current_player(ctx)
 
@@ -168,4 +166,4 @@ class AudioCommands(BaseCog):
             seek=True,
         )
 
-        await ctx.respond("New speed applied")
+        await interaction.response.send_message("New speed applied")
