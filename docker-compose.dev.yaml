@@ -13,7 +13,7 @@ services:
       - .env
 
   lavalink:
-    image: fredboat/lavalink:9abd5d0
+    image: fredboat/lavalink:3.7.5
     volumes:
       - ./lavalink.yaml:/opt/Lavalink/application.yaml
     healthcheck:
