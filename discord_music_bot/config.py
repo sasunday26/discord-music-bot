@@ -6,13 +6,11 @@ env.read_env(override=True)
 
 with env.prefixed("DISCORD_"):
     BOT_TOKEN: str = env.str("BOT_TOKEN")
-    COMMAND_PREFIX: str = env.str("COMMAND_PREFIX")
-    GUILD_IDS: list[int] = env.list("GUILD_IDS", subcast=int)
+    GUILD_ID: int = env.int("GUILD_ID")
 
 with env.prefixed("WAVELINK_NODE_"):
     WAVELINK_CONFIG: dict = {
-        "host": env.str("HOST"),
-        "port": env.int("PORT"),
+        "uri": env.str("URI"),
         "password": env.str("PASSWORD"),
     }
 
