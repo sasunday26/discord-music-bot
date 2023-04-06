@@ -11,7 +11,7 @@ packages = [{include = "discord_music_bot"}]
 python = "^3.11"
 environs = "^9.5.0"
 validators = "^0.20.0"
-discord-py = "^2.2.2"
+discord-py = {extras = ["voice"], version = "^2.2.2"}
 wavelink = "^2.1.0"
 
 
