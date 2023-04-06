@@ -6,9 +6,11 @@ import wavelink
 from discord import app_commands
 from wavelink.ext import spotify
 
+from ..client import CustomClient
 
-def add_streaming_commands(tree: app_commands.CommandTree) -> None:
-    @tree.command(
+
+def add_streaming_commands(client: CustomClient) -> None:
+    @client.tree.command(
         name="youtube",
         description="play audio from a YouTube video",
     )
@@ -24,7 +26,7 @@ def add_streaming_commands(tree: app_commands.CommandTree) -> None:
 
         await start_playing(interaction, player)
 
-    @tree.command(
+    @client.tree.command(
         name="spotify",
         description="play spotify tracks, playlists and albums from a URL",
     )

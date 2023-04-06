@@ -14,7 +14,7 @@ def run_bot() -> None:
 
     client = CustomClient()
 
-    add_commands(client.tree)
+    add_commands(client)
     add_client_events(client, logger)
 
     client.run(config.BOT_TOKEN)
