@@ -84,6 +84,7 @@ def add_queue_commands(client: CustomClient) -> None:
                 f"Skipping **{skipped_item.title}**"
             )
             await interaction.followup.send("This was the last one in queue")
+            await client.change_presence(status=discord.Status.idle)
             return
 
         current_item = player.queue.get()

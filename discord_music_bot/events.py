@@ -8,6 +8,18 @@ from .client import CustomClient
 
 def add_client_events(client: CustomClient, logger=logging.Logger) -> None:
     @client.event
+    async def on_wavelink_track_start(
+        payload: wavelink.TrackEventPayload,
+    ) -> None:
+        await client.change_presence(
+            activity=discord.Activity(
+                name=payload.track.title,
+                type=discord.ActivityType.listening,
+            ),
+            status=discord.Status.online,
+        )
+
+    @client.event
     async def on_wavelink_track_end(
         payload: wavelink.TrackEventPayload,
     ) -> None:
@@ -16,7 +28,11 @@ def add_client_events(client: CustomClient, logger=logging.Logger) -> None:
             f"because {payload.reason}"
         )
 
-        if payload.player.queue.is_empty or payload.reason == "REPLACED":
+        if payload.player.queue.is_empty:
+            await client.change_presence(status=discord.Status.idle)
+            return
+
+        if payload.reason == "REPLACED":
             return
 
         await payload.player.play(payload.player.queue.get())
