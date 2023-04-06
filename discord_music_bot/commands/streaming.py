@@ -19,7 +19,7 @@ def add_streaming_commands(tree: app_commands.CommandTree) -> None:
         player = await ensure_voice_channel(interaction)
         track = await wavelink.YouTubeTrack.search(query, return_first=True)
 
-        player.queue.put(track)
+        await player.queue.put_wait(track)
         await interaction.response.send_message(f"**{track}** added to queue")
 
         await start_playing(interaction, player)
@@ -65,10 +65,10 @@ def add_streaming_commands(tree: app_commands.CommandTree) -> None:
                     f"Playing **{first_item.title}**"
                 )
 
-            async for partial in tracks:
-                player.queue.put(partial)
+            async for track in tracks:
+                await player.queue.put_wait(track)
                 await interaction.followup.send(
-                    f"**{partial.title}** added to queue"
+                    f"**{track.title}** added to queue"
                 )
 
             await interaction.followup.send(
@@ -77,9 +77,9 @@ def add_streaming_commands(tree: app_commands.CommandTree) -> None:
 
         elif search_type == spotify.SpotifySearchType.track:
             track = await spotify.SpotifyTrack.search(
-                query=query, type=search_type, return_first=True
+                query=query, type=search_type
             )
-            player.queue.put(track)
+            await player.queue.put_wait(track)
             await interaction.response.send_message(
                 f"**{track.title}** added to queue"
             )
