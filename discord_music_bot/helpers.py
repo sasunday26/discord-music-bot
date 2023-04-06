@@ -9,16 +9,27 @@ def format_timedelta(delta: timedelta) -> str:
     hours, remainder = divmod(seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
 
-    return (f"{hours}" if hours > 0 else "") + f"{minutes}:{seconds:02d}"
+    return (
+        f"{hours:02d}:" if hours > 0 else ""
+    ) + f"{minutes:02d}:{seconds:02d}"
 
 
 async def get_current_player(
-    ctx: discord.ApplicationContext,
+    interaction: discord.Interaction,
 ) -> wavelink.Player:
-    player: wavelink.Player = ctx.voice_client
+    guild = interaction.guild
+
+    if not guild:
+        raise discord.DiscordException("interaction.guild is None")
+
+    player: wavelink.Player = guild.voice_client
 
     if not player:
-        await ctx.respond("Not connected to a voice channel")
-        raise discord.ClientException("Bot is not in a voice channel")
+        await interaction.response.send_message(
+            "You're not in a voice channel"
+        )
+        raise discord.DiscordException(
+            "interaction.guild.voice_client is None"
+        )
 
     return player

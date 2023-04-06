@@ -1,26 +1,20 @@
 import logging
 from logging.config import dictConfig
 
-import discord
+from discord_music_bot.events import add_client_events
 
-from discord_music_bot import config
-from discord_music_bot.commands import add_cogs
-from discord_music_bot.errors import add_error_handlers
+from . import config
+from .client import CustomClient
+from .commands import add_commands
 
 
 def run_bot() -> None:
     dictConfig(config.LOGGING_CONFIG)
     logger = logging.getLogger("discord_music_bot")
 
-    intents = discord.Intents.default()
-    intents.message_content = True
+    client = CustomClient()
 
-    bot = discord.Bot(
-        intents=intents,
-        command_prefix=config.COMMAND_PREFIX,
-    )
+    add_commands(client.tree)
+    add_client_events(client, logger)
 
-    add_cogs(bot, logger)
-    add_error_handlers(bot, logger)
-
-    bot.run(config.BOT_TOKEN)
+    client.run(config.BOT_TOKEN)
