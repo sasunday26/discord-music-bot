@@ -65,7 +65,7 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
     async def seek(interaction: discord.Interaction, *, position: str) -> None:
         player = await get_current_player(interaction)
 
-        if not player.track:
+        if not player.current:
             await interaction.response.send_message(
                 "Not playing anything right now"
             )
@@ -85,7 +85,7 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
         )
         position_td = timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
-        duration = timedelta(seconds=player.track.length)
+        duration = timedelta(seconds=player.current.length)
         if duration < position_td:
             await interaction.response.send_message(
                 "Track's total length is "
@@ -130,7 +130,6 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
         try:
             await player.set_filter(
                 wavelink.Filter(equalizer=wavelink.Equalizer(bands=bands)),
-                seek=True,
             )
         except ValueError:
             await interaction.response.send_message("Invalid value")
@@ -146,7 +145,7 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
         interaction: discord.Interaction,
         *,
         speed: app_commands.Range[float, 0.0],
-        pitch: app_commands.Range[float, 0.0, 1.0],
+        pitch: app_commands.Range[float, 0.0] = 1.0,
     ) -> None:
         player = await get_current_player(interaction)
 
@@ -154,7 +153,6 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
             wavelink.Filter(
                 timescale=wavelink.Timescale(speed=speed, pitch=pitch)
             ),
-            seek=True,
         )
 
         await interaction.response.send_message("New speed applied")

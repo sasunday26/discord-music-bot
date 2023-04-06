@@ -61,17 +61,17 @@ def add_streaming_commands(tree: app_commands.CommandTree) -> None:
             if not player.is_playing():
                 first_item = await anext(tracks)
                 await player.play(first_item)
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"Playing **{first_item.title}**"
                 )
 
             async for partial in tracks:
                 player.queue.put(partial)
-                await interaction.response.send_message(
+                await interaction.followup.send(
                     f"**{partial.title}** added to queue"
                 )
 
-            await interaction.response.send_message(
+            await interaction.followup.send(
                 f"Loading done. Items in queue: {len(player.queue)}"
             )
 
@@ -133,6 +133,4 @@ def add_streaming_commands(tree: app_commands.CommandTree) -> None:
         next_item = player.queue.get()
 
         await player.play(next_item)
-        await interaction.response.send_message(
-            f"Playing **{next_item.title}**"
-        )
+        await interaction.followup.send(f"Playing **{next_item.title}**")

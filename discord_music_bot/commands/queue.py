@@ -15,14 +15,13 @@ def add_queue_commands(tree: app_commands.CommandTree) -> None:
     )
     async def get_now_playing(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
+        track = player.current
 
-        if not player.track:
+        if not track:
             await interaction.response.send_message(
                 "Not playing anything right now"
             )
             return
-
-        track = player.track
 
         embed = discord.Embed(
             title=track.title, colour=discord.Colour.random()
@@ -69,7 +68,7 @@ def add_queue_commands(tree: app_commands.CommandTree) -> None:
     @tree.command(name="skip", description="skip currently playing song")
     async def play_next(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
-        skipped_item = player.track
+        skipped_item = player.current
 
         if not skipped_item:
             await interaction.response.send_message("Nothing to skip")
@@ -80,9 +79,7 @@ def add_queue_commands(tree: app_commands.CommandTree) -> None:
             await interaction.response.send_message(
                 f"Skipping **{skipped_item.title}**"
             )
-            await interaction.response.send_message(
-                "This was the last one in queue"
-            )
+            await interaction.followup.send("This was the last one in queue")
             return
 
         current_item = player.queue.get()
@@ -91,6 +88,4 @@ def add_queue_commands(tree: app_commands.CommandTree) -> None:
         await interaction.response.send_message(
             f"Skipping **{skipped_item.title}**"
         )
-        await interaction.response.send_message(
-            f"Playing **{current_item.title}**"
-        )
+        await interaction.followup.send(f"Playing **{current_item.title}**")
