@@ -1,7 +1,7 @@
 import logging
 from logging.config import dictConfig
 
-# from discord_music_bot.events import add_client_events
+from discord_music_bot.events import add_client_events
 
 from . import config
 from .client import CustomClient
@@ -15,6 +15,6 @@ def run_bot() -> None:
     client = CustomClient()
 
     add_commands(client.tree)
-    # add_client_events(client, logger)
+    add_client_events(client, logger)
 
     client.run(config.BOT_TOKEN)

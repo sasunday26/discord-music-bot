@@ -1,63 +1,47 @@
-from typing import AsyncIterable
+# mypy: disable-error-code=arg-type
 
 import discord
 import validators
 import wavelink
+from discord import app_commands
 from wavelink.ext import spotify
 
-from discord_music_bot import config
-from discord_music_bot.commands.base import BaseCog
 
-
-class StreamingCommands(BaseCog):
-    async def setup(self) -> None:
-        await self.bot.wait_until_ready()
-
-        await wavelink.NodePool.create_node(
-            bot=self.bot,
-            **config.WAVELINK_CONFIG,
-            spotify_client=spotify.SpotifyClient(
-                **config.SPOTIFY_CONFIG,
-            ),
-        )
-
-    @discord.slash_command(
+def add_streaming_commands(tree: app_commands.CommandTree) -> None:
+    @tree.command(
         name="youtube",
         description="play audio from a YouTube video",
     )
-    @discord.option("query", str, description="search request or URL")
+    @app_commands.describe(query="search request or URL")
     async def queue_youtube(
-        self, ctx: discord.ApplicationContext, *, query: str
+        interaction: discord.Interaction, *, query: str
     ) -> None:
-        player: wavelink.Player = ctx.voice_client
-
-        track = await wavelink.YouTubeTrack.search(
-            query=query, return_first=True
-        )
+        player = await ensure_voice_channel(interaction)
+        track = await wavelink.YouTubeTrack.search(query, return_first=True)
 
         player.queue.put(track)
-        await ctx.respond(f"**{track}** added to queue")
+        await interaction.response.send_message(f"**{track}** added to queue")
 
-    @discord.slash_command(
+        await start_playing(interaction, player)
+
+    @tree.command(
         name="spotify",
         description="play spotify tracks, playlists and albums from a URL",
     )
-    @discord.option(
-        "url",
-        str,
-        description=(
+    @app_commands.describe(
+        url=(
             "spotify URL "
             "(https://open.spotify.com/track|album|playlist/...)"
-        ),
+        )
     )
     async def queue_spotify(
-        self, ctx: discord.ApplicationContext, *, url: str
+        interaction: discord.Interaction, *, url: str
     ) -> None:
-        player: wavelink.Player = ctx.voice_client
+        player = await ensure_voice_channel(interaction)
         decoded = spotify.decode_url(url)
 
         if not validators.url(url) or decoded is None:
-            await ctx.respond("Invalid URL provided")
+            await interaction.response.send_message("Invalid URL provided")
             return
 
         search_type = decoded["type"]
@@ -67,23 +51,27 @@ class StreamingCommands(BaseCog):
             spotify.SpotifySearchType.album,
             spotify.SpotifySearchType.playlist,
         ):
-            await ctx.respond("Loading tracks into the queue")
-            tracks: AsyncIterable[
-                wavelink.PartialTrack
-            ] = spotify.SpotifyTrack.iterator(
-                query=query, partial_tracks=True, type=search_type
+            await interaction.response.send_message(
+                "Loading tracks into the queue"
+            )
+            tracks = spotify.SpotifyTrack.iterator(
+                query=query, type=search_type
             )
 
             if not player.is_playing():
                 first_item = await anext(tracks)
                 await player.play(first_item)
-                await ctx.send(f"Playing **{first_item.title}**")
+                await interaction.response.send_message(
+                    f"Playing **{first_item.title}**"
+                )
 
             async for partial in tracks:
                 player.queue.put(partial)
-                await ctx.send(f"**{partial.title}** added to queue")
+                await interaction.response.send_message(
+                    f"**{partial.title}** added to queue"
+                )
 
-            await ctx.send(
+            await interaction.response.send_message(
                 f"Loading done. Items in queue: {len(player.queue)}"
             )
 
@@ -92,56 +80,59 @@ class StreamingCommands(BaseCog):
                 query=query, type=search_type, return_first=True
             )
             player.queue.put(track)
-            await ctx.respond(f"**{track.title}** added to queue")
-
-        else:
-            self.logger.error(
-                f"Couldn't play spotify track: "
-                f"url={url}, search_type={search_type}, query={query}"
+            await interaction.response.send_message(
+                f"**{track.title}** added to queue"
             )
-            await ctx.respond("Something went wrong")
 
-    @queue_youtube.before_invoke
-    @queue_spotify.before_invoke
+        await start_playing(interaction, player)
+
     async def ensure_voice_channel(
-        self,
-        ctx: discord.ApplicationContext,
-    ) -> None:
-        author_voice = ctx.author.voice
+        interaction: discord.Interaction,
+    ) -> wavelink.Player:
+        if not interaction.user:
+            raise discord.DiscordException("interaction.user is None")
+
+        if not isinstance(interaction.user, discord.Member):
+            raise discord.DiscordException(
+                "interaction.user is not a discord.Member object"
+            )
+
+        author_voice = interaction.user.voice
+
         if not author_voice:
-            raise discord.ApplicationCommandError(
-                "User isn't in voice channel"
+            await interaction.response.send_message(
+                "You're not in a voice channel"
+            )
+            raise discord.DiscordException("interaction.user.voice is None")
+
+        if not interaction.guild:
+            raise discord.DiscordException("interaction.guild is None")
+
+        player: wavelink.Player = interaction.guild.voice_client
+
+        if not player and author_voice.channel:
+            player = await author_voice.channel.connect(cls=wavelink.Player)
+            return player
+
+        if author_voice.channel != player.channel:
+            await interaction.response.send_message(
+                "You're in a different channel"
+            )
+            raise discord.DiscordException(
+                "user is in a different voice channel"
             )
 
-        if not ctx.voice_client:
-            await author_voice.channel.connect(cls=wavelink.Player)
-            return
+        return player
 
-        if author_voice.channel != ctx.voice_client.channel:
-            raise discord.ApplicationCommandError(
-                "User is in a different channel"
-            )
-
-    @queue_youtube.after_invoke
-    @queue_spotify.after_invoke
-    async def start_playing(self, ctx: discord.ApplicationContext) -> None:
-        player: wavelink.Player = ctx.voice_client
-
+    async def start_playing(
+        interaction: discord.Interaction, player: wavelink.Player
+    ) -> None:
         if player.is_playing() or player.queue.is_empty:
             return
 
         next_item = player.queue.get()
 
         await player.play(next_item)
-        await ctx.send(f"Playing **{next_item.title}**")
-
-    @discord.Cog.listener()
-    async def on_wavelink_track_end(
-        self, player: wavelink.Player, track: wavelink.Track, reason: str
-    ) -> None:
-        self.logger.info(f"track {track} finished playing, because {reason}")
-
-        if player.queue.is_empty or reason == "REPLACED":
-            return
-
-        await player.play(player.queue.get())
+        await interaction.response.send_message(
+            f"Playing **{next_item.title}**"
+        )
