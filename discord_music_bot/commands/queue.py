@@ -30,10 +30,10 @@ def add_queue_commands(tree: app_commands.CommandTree) -> None:
         if track.author:
             embed.add_field(name="Author", value=track.author)
 
-        position = timedelta(seconds=player.position)
+        position = timedelta(seconds=player.position // 1000)
         embed.add_field(name="Position", value=format_timedelta(position))
 
-        duration = timedelta(seconds=track.length)
+        duration = timedelta(seconds=track.length // 1000)
         embed.add_field(name="Duration", value=format_timedelta(duration))
 
         if track.uri:

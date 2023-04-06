@@ -93,7 +93,7 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
             )
             return
 
-        await player.seek(position_td.total_seconds() * 1000)
+        await player.seek(position_td.seconds * 1000)
         await interaction.response.send_message(
             f"Seeking to {format_timedelta(position_td)}"
         )
