@@ -7,11 +7,14 @@ import discord
 import wavelink
 from discord import app_commands
 
+from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
 
 
-def add_audio_commands(tree: app_commands.CommandTree) -> None:
-    @tree.command(name="pause", description="pause the currently playing song")
+def add_audio_commands(client: CustomClient) -> None:
+    @client.tree.command(
+        name="pause", description="pause the currently playing song"
+    )
     async def pause(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
@@ -22,7 +25,7 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
         await player.pause()
         await interaction.response.send_message("Paused playback")
 
-    @tree.command(
+    @client.tree.command(
         name="resume", description="resume playing the currently paused song"
     )
     async def resume(interaction: discord.Interaction) -> None:
@@ -35,14 +38,16 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
         await player.resume()
         await interaction.response.send_message("Resuming playback")
 
-    @tree.command(name="shut_the_fuck_up", description="SHUT THE FUCK UP")
+    @client.tree.command(
+        name="shut_the_fuck_up", description="SHUT THE FUCK UP"
+    )
     async def leave(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
         await player.disconnect()
         await interaction.response.send_message("Ok")
 
-    @tree.command(name="volume", description="set audio volume")
+    @client.tree.command(name="volume", description="set audio volume")
     @app_commands.describe(volume="percentage from 0 to 1000")
     async def set_volume(
         interaction: discord.Interaction,
@@ -60,7 +65,9 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
         await player.set_volume(volume)
         await interaction.response.send_message(f"Volume set to {volume}%")
 
-    @tree.command(name="seek", description="seek to a specified position")
+    @client.tree.command(
+        name="seek", description="seek to a specified position"
+    )
     @app_commands.describe(position="timestamp (4:20) or seconds (260)")
     async def seek(interaction: discord.Interaction, *, position: str) -> None:
         player = await get_current_player(interaction)
@@ -98,7 +105,7 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
             f"Seeking to {format_timedelta(position_td)}"
         )
 
-    @tree.command(
+    @client.tree.command(
         name="equalizer",
         description="add equalizer filter",
     )
@@ -137,7 +144,7 @@ def add_audio_commands(tree: app_commands.CommandTree) -> None:
 
         await interaction.response.send_message("Equalizer added")
 
-    @tree.command(name="speed", description="set playback speed")
+    @client.tree.command(name="speed", description="set playback speed")
     @app_commands.describe(
         speed="playback speed multiplier", pitch="track pitch multiplier"
     )

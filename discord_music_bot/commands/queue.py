@@ -3,13 +3,13 @@
 from datetime import timedelta
 
 import discord
-from discord import app_commands
 
+from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
 
 
-def add_queue_commands(tree: app_commands.CommandTree) -> None:
-    @tree.command(
+def add_queue_commands(client: CustomClient) -> None:
+    @client.tree.command(
         name="now_playing",
         description="get information about the currently playing song",
     )
@@ -41,7 +41,9 @@ def add_queue_commands(tree: app_commands.CommandTree) -> None:
 
         await interaction.response.send_message(embed=embed)
 
-    @tree.command(name="queue", description="get list of tracks in the queue")
+    @client.tree.command(
+        name="queue", description="get list of tracks in the queue"
+    )
     async def get_queue(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
@@ -58,14 +60,16 @@ def add_queue_commands(tree: app_commands.CommandTree) -> None:
 
         await interaction.response.send_message(embed=embed)
 
-    @tree.command(name="clear", description="clear the queue")
+    @client.tree.command(name="clear", description="clear the queue")
     async def clear_queue(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
         player.queue.clear()
         await interaction.response.send_message("Queue cleared")
 
-    @tree.command(name="skip", description="skip currently playing song")
+    @client.tree.command(
+        name="skip", description="skip currently playing song"
+    )
     async def play_next(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
         skipped_item = player.current
@@ -80,6 +84,7 @@ def add_queue_commands(tree: app_commands.CommandTree) -> None:
                 f"Skipping **{skipped_item.title}**"
             )
             await interaction.followup.send("This was the last one in queue")
+            await client.change_presence(status=discord.Status.idle)
             return
 
         current_item = player.queue.get()
