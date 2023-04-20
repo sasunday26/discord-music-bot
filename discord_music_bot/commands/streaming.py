@@ -1,5 +1,5 @@
 # mypy: disable-error-code=arg-type
-
+import asyncio
 import discord
 import validators
 import wavelink
@@ -87,6 +87,21 @@ def add_streaming_commands(client: CustomClient) -> None:
             )
 
         await start_playing(interaction, player)
+
+    @client.tree.command(name="outro", description="epic disconnect")
+    async def play_n_leave(interaction: discord.Interaction) -> None:
+        player = await ensure_voice_channel(interaction)
+        track = await wavelink.YouTubeTrack.search(
+            "https://youtu.be/3_-a9nVZYjk", return_first=True
+        )
+        await interaction.response.send_message("It's time to go to sleep")
+        await player.play(track)
+
+        while player.current == track and player.is_playing():
+            await asyncio.sleep(0.5)
+            if player.position >= 58300:
+                print(player.position)
+                await player.disconnect()
 
     async def ensure_voice_channel(
         interaction: discord.Interaction,
