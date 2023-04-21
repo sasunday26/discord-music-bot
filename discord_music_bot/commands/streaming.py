@@ -1,13 +1,14 @@
 # mypy: disable-error-code=arg-type
 import asyncio
+
 import discord
 import validators
 import wavelink
 from discord import app_commands
 from wavelink.ext import spotify
 
-from ..client import CustomClient
 from .. import config
+from ..client import CustomClient
 
 
 def add_streaming_commands(client: CustomClient) -> None:
