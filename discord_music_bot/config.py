@@ -14,10 +14,16 @@ with env.prefixed("WAVELINK_NODE_"):
         "password": env.str("PASSWORD"),
     }
 
-with env.prefixed("SPOTIFY_"):
+with env.prefixed("SPOTIFY_CLIENT_"):
     SPOTIFY_CONFIG: dict = {
-        "client_id": env.str("CLIENT_ID"),
-        "client_secret": env.str("CLIENT_SECRET"),
+        "client_id": env.str("ID"),
+        "client_secret": env.str("SECRET"),
+    }
+
+with env.prefixed("OUTRO_VIDEO_"):
+    OUTRO_VIDEO: dict = {
+        "url": env.str("URL"),
+        "timestamp_ms": env.int("TIMESTAMP_MS"),
     }
 
 LOGGING_CONFIG: dict = env.json("LOGGING_CONFIG")
