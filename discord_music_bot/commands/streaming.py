@@ -101,7 +101,6 @@ def add_streaming_commands(client: CustomClient) -> None:
         while player.current == track and player.is_playing():
             await asyncio.sleep(0.5)
             if player.position >= config.VIDEO_TIMESTAMP:
-                print(player.position)
                 await player.disconnect()
 
     async def ensure_voice_channel(
