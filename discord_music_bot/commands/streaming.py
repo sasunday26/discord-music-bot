@@ -7,6 +7,7 @@ from discord import app_commands
 from wavelink.ext import spotify
 
 from ..client import CustomClient
+from .. import config
 
 
 def add_streaming_commands(client: CustomClient) -> None:
@@ -92,14 +93,14 @@ def add_streaming_commands(client: CustomClient) -> None:
     async def play_n_leave(interaction: discord.Interaction) -> None:
         player = await ensure_voice_channel(interaction)
         track = await wavelink.YouTubeTrack.search(
-            "https://youtu.be/3_-a9nVZYjk", return_first=True
+            config.VIDEO_URL, return_first=True
         )
         await interaction.response.send_message("It's time to go to sleep")
         await player.play(track)
 
         while player.current == track and player.is_playing():
             await asyncio.sleep(0.5)
-            if player.position >= 58300:
+            if player.position >= config.VIDEO_TIMESTAMP:
                 print(player.position)
                 await player.disconnect()
 

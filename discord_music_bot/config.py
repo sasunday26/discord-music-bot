@@ -20,4 +20,8 @@ with env.prefixed("SPOTIFY_"):
         "client_secret": env.str("CLIENT_SECRET"),
     }
 
+with env.prefixed("OUTRO_"):
+    VIDEO_URL: str = env.str("VIDEO_URL")
+    VIDEO_TIMESTAMP: int = env.int("VIDEO_TIMESTAMP")
+
 LOGGING_CONFIG: dict = env.json("LOGGING_CONFIG")
