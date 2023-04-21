@@ -93,14 +93,14 @@ def add_streaming_commands(client: CustomClient) -> None:
     async def play_n_leave(interaction: discord.Interaction) -> None:
         player = await ensure_voice_channel(interaction)
         track = await wavelink.YouTubeTrack.search(
-            config.VIDEO_URL, return_first=True
+            config.URL, return_first=True
         )
         await interaction.response.send_message("It's time to go to sleep")
         await player.play(track)
 
         while player.current == track and player.is_playing():
             await asyncio.sleep(0.5)
-            if player.position >= config.VIDEO_TIMESTAMP_MS:
+            if player.position >= config.TIMESTAMP_MS:
                 await player.disconnect()
 
     async def ensure_voice_channel(
