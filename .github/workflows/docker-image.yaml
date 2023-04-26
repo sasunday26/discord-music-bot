@@ -1,0 +1,25 @@
+name: Create and publish a Docker image
+
+on:
+  push:
+    branches: [main, add-github-actions]
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: log in
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: build and push
+        uses: docker/build-push-action@v4
+        with:
+          push: true
+          tags: user/app:latest
