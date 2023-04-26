@@ -3,9 +3,12 @@ name: publish docker image
 on:
   push:
     branches: [main, add-github-actions]
+    tags:
+      - "v*"
 
 env:
   REGISTRY: ghcr.io
+  OWNER: ${{ github.repository_owner }}
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -29,7 +32,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{ version }}
+            type=ref,event=tag
 
       - name: build and push
         uses: docker/build-push-action@v4
