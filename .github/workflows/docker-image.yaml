@@ -2,13 +2,17 @@ name: publish docker image
 
 on:
   push:
+    branches:
+      - main
+      - add-github-actions
     tags:
       - "*"
 
 env:
   REGISTRY: ghcr.io
+  USER: ${{ github.actor }}
   OWNER: ${{ github.repository_owner }}
-  IMAGE_NAME: ${{ github.repository }}
+  REPOSITORY: ${{ github.repository }}
 
 jobs:
   build-and-push-image:
@@ -24,17 +28,18 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ env.USER }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: extract metadata
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPOSITORY }}
           tags: |
-            type=semver,pattern={{version}}
             type=ref,event=tag
+            type=sha,format=long
+            type=sha
 
       - name: build and push
         uses: docker/build-push-action@v4
