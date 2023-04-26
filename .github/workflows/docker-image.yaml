@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - main
+      - fix-package-name
     tags:
       - "*"
 
 env:
   REGISTRY: ghcr.io
   USER: ${{ github.actor }}
-  OWNER: ${{ github.repository_owner }}
   REPOSITORY: ${{ github.repository }}
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.REPOSITORY }}
+          images: ${{ env.REPOSITORY }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=tag
