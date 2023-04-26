@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, add-github-actions]
     tags:
-      - "v*"
+      - "*"
 
 env:
   REGISTRY: ghcr.io
