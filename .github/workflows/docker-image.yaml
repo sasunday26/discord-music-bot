@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - fix-package-name
     tags:
       - "*"
 
