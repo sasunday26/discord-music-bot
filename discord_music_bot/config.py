@@ -6,7 +6,7 @@ env.read_env(override=True)
 
 with env.prefixed("DISCORD_"):
     BOT_TOKEN: str = env.str("BOT_TOKEN")
-    GUILD_ID: int = env.int("GUILD_ID")
+    GUILD_IDS: list[int] = env.list("GUILD_IDS", subcast=int)
 
 with env.prefixed("WAVELINK_NODE_"):
     WAVELINK_CONFIG: dict = {

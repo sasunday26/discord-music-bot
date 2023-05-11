@@ -16,10 +16,11 @@ class CustomClient(discord.Client):
         self.tree = app_commands.CommandTree(self)
 
     async def setup_hook(self) -> None:
-        guild = discord.Object(config.GUILD_ID)
+        for guild_id in config.GUILD_IDS:
+            guild = discord.Object(guild_id)
 
-        self.tree.copy_global_to(guild=guild)
-        await self.tree.sync(guild=guild)
+            self.tree.copy_global_to(guild=guild)
+            await self.tree.sync(guild=guild)
 
         node = wavelink.Node(**config.WAVELINK_CONFIG)
         spotify_client = spotify.SpotifyClient(**config.SPOTIFY_CONFIG)

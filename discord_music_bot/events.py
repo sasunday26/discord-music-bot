@@ -6,7 +6,7 @@ import wavelink
 from .client import CustomClient
 
 
-def add_client_events(client: CustomClient, logger=logging.Logger) -> None:
+def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
     @client.event
     async def on_wavelink_track_start(
         payload: wavelink.TrackEventPayload,
