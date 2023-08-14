@@ -21,8 +21,14 @@ def add_streaming_commands(client: CustomClient) -> None:
         interaction: discord.Interaction, *, query: str
     ) -> None:
         player = await ensure_voice_channel(interaction)
-        track = await wavelink.YouTubeTrack.search(query, return_first=True)
+        tracks = await wavelink.YouTubeTrack.search(query)
 
+        if not tracks:
+            await interaction.response.send_message(
+                f"No search results for query *{query}*"
+            )
+
+        track = tracks[0]
         await player.queue.put_wait(track)
         await interaction.response.send_message(f"**{track}** added to queue")
 
@@ -48,19 +54,14 @@ def add_streaming_commands(client: CustomClient) -> None:
             await interaction.response.send_message("Invalid URL provided")
             return
 
-        search_type = decoded["type"]
-        query = decoded["id"]
-
-        if search_type in (
+        if decoded["type"] in (
             spotify.SpotifySearchType.album,
             spotify.SpotifySearchType.playlist,
         ):
             await interaction.response.send_message(
                 "Loading tracks into the queue"
             )
-            tracks = spotify.SpotifyTrack.iterator(
-                query=query, type=search_type
-            )
+            tracks = spotify.SpotifyTrack.iterator(query=url)
 
             if not player.is_playing():
                 first_item = await anext(tracks)
@@ -79,10 +80,15 @@ def add_streaming_commands(client: CustomClient) -> None:
                 f"Loading done. Items in queue: {len(player.queue)}"
             )
 
-        elif search_type == spotify.SpotifySearchType.track:
-            track = await spotify.SpotifyTrack.search(
-                query=query, type=search_type
-            )
+        elif decoded["type"] == spotify.SpotifySearchType.track:
+            tracks = await spotify.SpotifyTrack.search(url)
+
+            if not tracks:
+                await interaction.response.send_message(
+                    f"No search results for *{url}*"
+                )
+
+            track = tracks[0]
             await player.queue.put_wait(track)
             await interaction.response.send_message(
                 f"**{track.title}** added to queue"
@@ -95,13 +101,19 @@ def add_streaming_commands(client: CustomClient) -> None:
         player = await ensure_voice_channel(interaction)
         await interaction.response.send_message("It's time to go to sleep")
 
-        track = await wavelink.YouTubeTrack.search(
-            config.OUTRO_VIDEO["url"], return_first=True
-        )
+        url = config.OUTRO_VIDEO["url"]
+        tracks = await wavelink.YouTubeTrack.search(url)
+
+        if not tracks:
+            await interaction.response.send_message(
+                f"Couldn't find the video, please verify that link is correct: '{url}'"
+            )
+
+        track = tracks[0]
         await player.play(track)
 
         while player.current == track and player.is_playing():
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.25)
 
             if player.position >= config.OUTRO_VIDEO["timestamp_ms"]:
                 await player.disconnect()
