@@ -137,7 +137,12 @@ def add_audio_commands(client: CustomClient) -> None:
 
         try:
             await player.set_filter(
-                wavelink.Filter(equalizer=wavelink.Equalizer(bands=bands)),
+                wavelink.Filter(
+                    equalizer=wavelink.Equalizer(
+                        bands=bands,
+                    )
+                ),
+                seek=True,
             )
         except ValueError:
             await interaction.response.send_message("Invalid value")
@@ -159,8 +164,12 @@ def add_audio_commands(client: CustomClient) -> None:
 
         await player.set_filter(
             wavelink.Filter(
-                timescale=wavelink.Timescale(speed=speed, pitch=pitch)
+                timescale=wavelink.Timescale(
+                    speed=speed,
+                    pitch=pitch,
+                )
             ),
+            seek=True,
         )
 
         await interaction.response.send_message("New speed applied")
