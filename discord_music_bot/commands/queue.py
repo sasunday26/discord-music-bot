@@ -94,3 +94,13 @@ def add_queue_commands(client: CustomClient) -> None:
             f"Skipping **{skipped_item.title}**"
         )
         await interaction.followup.send(f"Playing **{current_item.title}**")
+
+    @client.tree.command(name="loop", description="loop current track")
+    async def loop_track(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
+        is_looped = not player.queue.loop
+        player.queue.loop = is_looped
+
+        await interaction.response.send_message(
+            f"Current track is {'' if is_looped else 'un'}looped"
+        )
