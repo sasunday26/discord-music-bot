@@ -105,6 +105,7 @@ def add_streaming_commands(client: CustomClient) -> None:
 
             if player.position >= config.OUTRO_VIDEO["timestamp_ms"]:
                 await player.disconnect()
+                await client.change_presence(status=discord.Status.idle)
 
     async def ensure_voice_channel(
         interaction: discord.Interaction,

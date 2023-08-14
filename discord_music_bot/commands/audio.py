@@ -46,6 +46,7 @@ def add_audio_commands(client: CustomClient) -> None:
 
         await player.disconnect()
         await interaction.response.send_message("Ok")
+        await client.change_presence(status=discord.Status.idle)
 
     @client.tree.command(name="volume", description="set audio volume")
     @app_commands.describe(volume="percentage from 0 to 1000")
