@@ -5,14 +5,14 @@ description = ""
 authors = ["Andrew Yatsura <andrewyazura203@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "discord_music_bot"}]
+packages = [{ include = "discord_music_bot" }]
 
 [tool.poetry.dependencies]
 python = "^3.11"
 environs = "^9.5.0"
 validators = "^0.20.0"
-discord-py = {extras = ["voice"], version = "^2.2.2"}
-wavelink = "^2.1.0"
+discord-py = { extras = ["voice"], version = "^2.2.2" }
+wavelink = "^2.6.3"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -32,9 +32,4 @@ line-length = 79
 
 [tool.pylint]
 max-line-length = 79
-disable = [
-    "C0114",
-    "C0115",
-    "C0116",
-    "R0915"
-]
+disable = ["C0114", "C0115", "C0116", "R0915"]
