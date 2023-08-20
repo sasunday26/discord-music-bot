@@ -101,6 +101,9 @@ def add_queue_commands(client: CustomClient) -> None:
         is_looped = not player.queue.loop
         player.queue.loop = is_looped
 
+        if is_looped and (current := player.current):
+            player.queue.put_at_front(current)
+
         await interaction.response.send_message(
             f"Current track is {'' if is_looped else 'un'}looped"
         )
