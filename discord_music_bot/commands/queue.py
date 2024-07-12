@@ -40,6 +40,12 @@ def add_queue_commands(client: CustomClient) -> None:
         if track.uri:
             embed.add_field(name="Link", value=track.uri)
 
+        if track.artwork:
+            embed.set_image(url=track.artwork)
+
+        if track.album.name:
+            embed.add_field(name="Album", value=track.album.name)
+
         await interaction.response.send_message(embed=embed)
 
     @client.tree.command(
