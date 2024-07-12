@@ -69,9 +69,11 @@ def add_streaming_commands(client: CustomClient) -> None:
             )
 
         track = tracks[0]
+
+        player.queue.clear()
         await player.play(track)
 
-        while player.current == track and player.is_playing():
+        while player.current == track and player.playing:
             await asyncio.sleep(0.25)
 
             if player.position >= config.OUTRO_VIDEO["timestamp_ms"]:
