@@ -6,6 +6,7 @@ from datetime import timedelta
 import discord
 import wavelink
 from discord import app_commands
+from wavelink.types.filters import Equalizer
 
 from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
@@ -114,23 +115,18 @@ def add_audio_commands(client: CustomClient) -> None:
 
         # for example: [(1, 0.75), (2, 0.8), (3, 0.5)]
         # in this example, three low frequency bands are amplified
-        bands: list[tuple[int, float]] = []
+        bands: list[Equalizer] = []
         for param in settings.strip().split(" "):
             if not param:
                 continue
 
             band, gain = param.split(":")
-            bands.append((int(band), float(gain)))
+            bands.append(Equalizer(band=int(band), gain=float(gain)))
+        filters: wavelink.Filters = player.filters
+        filters.equalizer.set(bands=bands)
 
         try:
-            await player.set_filter(
-                wavelink.Filter(
-                    equalizer=wavelink.Equalizer(
-                        bands=bands,
-                    )
-                ),
-                seek=True,
-            )
+            await player.set_filters(filters, seek=True)
         except ValueError:
             await interaction.response.send_message("Invalid value")
             return
@@ -149,14 +145,8 @@ def add_audio_commands(client: CustomClient) -> None:
     ) -> None:
         player = await get_current_player(interaction)
 
-        await player.set_filter(
-            wavelink.Filter(
-                timescale=wavelink.Timescale(
-                    speed=speed,
-                    pitch=pitch,
-                )
-            ),
-            seek=True,
-        )
+        filters: wavelink.Filters = player.filters
+        filters.timescale.set(speed=speed, pitch=pitch)
 
+        await player.set_filters(filters, seek=True)
         await interaction.response.send_message("New speed applied")
