@@ -150,3 +150,16 @@ def add_audio_commands(client: CustomClient) -> None:
 
         await player.set_filters(filters, seek=True)
         await interaction.response.send_message("New speed applied")
+
+    @client.tree.command(
+        name="reset_filters",
+        description="reset all filters settings (equalizer, speed, volume )",
+    )
+    async def reset_filters(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
+
+        filters: wavelink.Filters = player.filters
+        filters.reset()
+
+        await player.set_filters(filters, seek=True)
+        await interaction.response.send_message("Filters reset")
