@@ -2,10 +2,9 @@
 import asyncio
 
 import discord
-import validators
 import wavelink
 from discord import app_commands
-from wavelink.ext import spotify
+from wavelink import TrackSource
 
 from .. import config
 from ..client import CustomClient
@@ -13,88 +12,48 @@ from ..client import CustomClient
 
 def add_streaming_commands(client: CustomClient) -> None:
     @client.tree.command(
-        name="youtube",
-        description="play audio from a YouTube video",
+        name="play",
+        description="play video/track/playlist/stream "
+        + "from YouTube/Spotify/Soundcloud/Twitch",
     )
     @app_commands.describe(query="search request or URL")
-    async def queue_youtube(
+    async def play_audio(
         interaction: discord.Interaction, *, query: str
     ) -> None:
         player = await ensure_voice_channel(interaction)
-        tracks = await wavelink.YouTubeTrack.search(query)
+
+        # Lock the player to this channel...
+        if not hasattr(player, "home"):
+            player.home = interaction.channel
+        elif player.home != interaction.channel:
+            await interaction.response.send_message(
+                f"You can only play songs in {player.home.mention},"
+                + " as the player has already started there."
+            )
+            return
+
+        tracks = await wavelink.Playable.search(
+            query, source=TrackSource.YouTube
+        )
 
         if not tracks:
             await interaction.response.send_message(
                 f"No search results for query *{query}*"
             )
 
-        track = tracks[0]
-        await player.queue.put_wait(track)
-        await interaction.response.send_message(f"**{track}** added to queue")
-
-        await start_playing(interaction, player)
-
-    @client.tree.command(
-        name="spotify",
-        description="play spotify tracks, playlists and albums from a URL",
-    )
-    @app_commands.describe(
-        url=(
-            "spotify URL "
-            "(https://open.spotify.com/track|album|playlist/...)"
-        )
-    )
-    async def queue_spotify(
-        interaction: discord.Interaction, *, url: str
-    ) -> None:
-        player = await ensure_voice_channel(interaction)
-        decoded = spotify.decode_url(url)
-
-        if not validators.url(url) or decoded is None:
-            await interaction.response.send_message("Invalid URL provided")
-            return
-
-        if decoded["type"] in (
-            spotify.SpotifySearchType.album,
-            spotify.SpotifySearchType.playlist,
-        ):
+        if isinstance(tracks, wavelink.Playlist):
+            added: int = await player.queue.put_wait(tracks)
             await interaction.response.send_message(
-                "Loading tracks into the queue"
+                f"Added the playlist **`{tracks.name}`** ({added} songs) to the queue."
             )
-            tracks = spotify.SpotifyTrack.iterator(query=url)
-
-            if not player.is_playing():
-                first_item = await anext(tracks)
-                await player.play(first_item)
-                await interaction.followup.send(
-                    f"Playing **{first_item.title}**"
-                )
-
-            async for track in tracks:
-                await player.queue.put_wait(track)
-                await interaction.followup.send(
-                    f"**{track.title}** added to queue"
-                )
-
-            await interaction.followup.send(
-                f"Loading done. Items in queue: {len(player.queue)}"
-            )
-
-        elif decoded["type"] == spotify.SpotifySearchType.track:
-            tracks = await spotify.SpotifyTrack.search(url)
-
-            if not tracks:
-                await interaction.response.send_message(
-                    f"No search results for *{url}*"
-                )
-
-            track = tracks[0]
+        else:
+            track: wavelink.Playable = tracks[0]
             await player.queue.put_wait(track)
             await interaction.response.send_message(
-                f"**{track.title}** added to queue"
+                f"Added **`{track}`** to the queue."
             )
 
-        await start_playing(interaction, player)
+        await start_playing(player)
 
     @client.tree.command(name="outro", description="epic disconnect")
     async def play_n_leave(interaction: discord.Interaction) -> None:
@@ -102,7 +61,7 @@ def add_streaming_commands(client: CustomClient) -> None:
         await interaction.response.send_message("It's time to go to sleep")
 
         url = config.OUTRO_VIDEO["url"]
-        tracks = await wavelink.YouTubeTrack.search(url)
+        tracks = await wavelink.Playable.search(url)
 
         if not tracks:
             await interaction.response.send_message(
@@ -157,13 +116,10 @@ def add_streaming_commands(client: CustomClient) -> None:
 
         return player
 
-    async def start_playing(
-        interaction: discord.Interaction, player: wavelink.Player
-    ) -> None:
-        if player.is_playing() or player.queue.is_empty:
+    async def start_playing(player: wavelink.Player) -> None:
+        if player.playing or player.queue.is_empty:
             return
 
         next_item = player.queue.get()
 
         await player.play(next_item)
-        await interaction.followup.send(f"Playing **{next_item.title}**")
