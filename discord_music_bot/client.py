@@ -1,7 +1,6 @@
 import discord
 import wavelink
 from discord import app_commands
-from wavelink.ext import spotify
 
 from . import config
 
@@ -23,8 +22,7 @@ class CustomClient(discord.Client):
             await self.tree.sync(guild=guild)
 
         node = wavelink.Node(**config.WAVELINK_CONFIG)
-        spotify_client = spotify.SpotifyClient(**config.SPOTIFY_CONFIG)
 
-        await wavelink.NodePool.connect(
-            client=self, nodes=[node], spotify=spotify_client
+        await wavelink.Pool.connect(
+            client=self, nodes=[node], cache_capacity=None
         )
