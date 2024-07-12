@@ -53,3 +53,7 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
     @client.event
     async def on_error(event: str, *args, **kwargs) -> None:
         logger.error(f"{event=}, {args=}, {kwargs=}")
+
+    @client.event
+    async def on_ready():
+        await client.tree.sync()
