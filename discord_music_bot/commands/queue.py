@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 import discord
+from wavelink import QueueMode
 
 from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
@@ -72,37 +73,24 @@ def add_queue_commands(client: CustomClient) -> None:
     )
     async def play_next(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
-        skipped_item = player.current
+        skipped_item = await player.skip()
 
         if not skipped_item:
             await interaction.response.send_message("Nothing to skip")
             return
 
-        if player.queue.is_empty:
-            await player.stop()
-            await interaction.response.send_message(
-                f"Skipping **{skipped_item.title}**"
-            )
-            await interaction.followup.send("This was the last one in queue")
-            await client.change_presence(status=discord.Status.idle)
-            return
-
-        current_item = player.queue.get()
-
-        await player.play(current_item)
         await interaction.response.send_message(
-            f"Skipping **{skipped_item.title}**"
+            f"Skipping **`{skipped_item.title} - {skipped_item.author}`**"
         )
-        await interaction.followup.send(f"Playing **{current_item.title}**")
+        if not player.playing:
+            await interaction.followup.send("Finished playing queue")
 
     @client.tree.command(name="loop", description="loop current track")
     async def loop_track(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
-        is_looped = not player.queue.loop
-        player.queue.loop = is_looped
+        is_looped = player.queue.mode == QueueMode.normal
 
-        if is_looped and (current := player.current):
-            player.queue.put_at_front(current)
+        player.queue.mode = QueueMode.loop if is_looped else QueueMode.normal
 
         await interaction.response.send_message(
             f"Current track is {'' if is_looped else 'un'}looped"
