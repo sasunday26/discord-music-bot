@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 import discord
-from wavelink import QueueMode
+from wavelink import QueueMode, AutoPlayMode
 
 from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
@@ -63,7 +63,31 @@ def add_queue_commands(client: CustomClient) -> None:
         )
 
         for i, track in enumerate(player.queue, start=1):
-            embed.add_field(name=f"**{track.title}**", value=str(i))
+            embed.add_field(
+                name=f"`{track.title} - {track.author}`", value=str(i)
+            )
+
+        await interaction.response.send_message(embed=embed)
+
+    @client.tree.command(
+        name="queue_autoplay",
+        description="get list of tracks in the autoplay queue",
+    )
+    async def get_autoplay_queue(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
+
+        if player.auto_queue.is_empty:
+            await interaction.response.send_message("Autoplay queue is empty")
+            return
+
+        embed = discord.Embed(
+            title="Songs in autoplay queue:", colour=discord.Colour.random()
+        )
+
+        for i, track in enumerate(player.auto_queue, start=1):
+            embed.add_field(
+                name=f"`{track.title} - {track.author}`", value=str(i)
+            )
 
         await interaction.response.send_message(embed=embed)
 
@@ -101,3 +125,16 @@ def add_queue_commands(client: CustomClient) -> None:
         await interaction.response.send_message(
             f"Current track is {'' if is_looped else 'un'}looped"
         )
+
+    @client.tree.command(name="autoplay", description="toggle autoplay")
+    async def toggle_autoplay(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
+
+        player.autoplay = (
+            AutoPlayMode.enabled
+            if player.autoplay == AutoPlayMode.disabled
+            else AutoPlayMode.disabled
+        )
+
+        state = "" if player.autoplay != AutoPlayMode.disabled else "not "
+        await interaction.response.send_message(f"Autoplay is {state}enabled")
