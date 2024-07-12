@@ -12,31 +12,18 @@ from ..helpers import format_timedelta, get_current_player
 
 
 def add_audio_commands(client: CustomClient) -> None:
-    @client.tree.command(
-        name="pause", description="pause the currently playing song"
-    )
+    @client.tree.command(name="pause", description="pause/resume current song")
     async def pause(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
-        if not player.is_playing():
+        if not player.playing:
             await interaction.response.send_message("Not playing")
             return
 
-        await player.pause()
-        await interaction.response.send_message("Paused playback")
-
-    @client.tree.command(
-        name="resume", description="resume playing the currently paused song"
-    )
-    async def resume(interaction: discord.Interaction) -> None:
-        player = await get_current_player(interaction)
-
-        if not player.is_paused():
-            await interaction.response.send_message("Not paused")
-            return
-
-        await player.resume()
-        await interaction.response.send_message("Resuming playback")
+        await player.pause(not player.paused)
+        await interaction.response.send_message(
+            "Paused" if player.paused else "Resumed"
+        )
 
     @client.tree.command(
         name="shut_the_fuck_up", description="SHUT THE FUCK UP"
