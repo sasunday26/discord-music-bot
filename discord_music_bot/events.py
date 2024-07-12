@@ -45,7 +45,8 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
 
         await client.change_presence(
             activity=discord.Activity(
-                name=payload.track.title,
+                name=f'{"(AP) " if original and original.recommended else ""}'
+                + f"{payload.track.title} - {payload.track.author}",
                 type=discord.ActivityType.listening,
             ),
             status=discord.Status.online,
