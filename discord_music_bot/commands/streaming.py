@@ -14,7 +14,7 @@ def add_streaming_commands(client: CustomClient) -> None:
     @client.tree.command(
         name="play",
         description="play video/track/playlist/stream "
-        + "from YouTube/Spotify/Soundcloud/Twitch",
+        "from YouTube/Spotify/Soundcloud/Twitch",
     )
     @app_commands.describe(query="search request or URL")
     async def play_audio(
@@ -28,7 +28,7 @@ def add_streaming_commands(client: CustomClient) -> None:
         elif player.home != interaction.channel:
             await interaction.response.send_message(
                 f"You can only play songs in {player.home.mention},"
-                + " as the player has already started there."
+                " as the player has already started there."
             )
             return
 
