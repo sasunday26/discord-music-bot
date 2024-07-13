@@ -62,16 +62,7 @@ lavalink:
     youtubeSearchEnabled: true
     soundcloudSearchEnabled: true
     gc-warnings: true
-metrics:
-  prometheus:
-    enabled: false
-    endpoint: /metrics
-sentry:
-  dsn: ""
-  environment: ""
 logging:
-  file:
-    path: ./logs/
   level:
     root: INFO
     lavalink: INFO
@@ -82,7 +73,3 @@ logging:
     includeQueryString: true
     includePayload: true
     maxPayloadLength: 10000
-  logback:
-    rollingpolicy:
-      max-file-size: 1GB
-      max-history: 30
