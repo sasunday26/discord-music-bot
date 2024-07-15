@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 import discord
+from wavelink import QueueMode, AutoPlayMode
 
 from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
@@ -39,6 +40,12 @@ def add_queue_commands(client: CustomClient) -> None:
         if track.uri:
             embed.add_field(name="Link", value=track.uri)
 
+        if track.artwork:
+            embed.set_image(url=track.artwork)
+
+        if track.album.name:
+            embed.add_field(name="Album", value=track.album.name)
+
         await interaction.response.send_message(embed=embed)
 
     @client.tree.command(
@@ -56,7 +63,31 @@ def add_queue_commands(client: CustomClient) -> None:
         )
 
         for i, track in enumerate(player.queue, start=1):
-            embed.add_field(name=f"**{track.title}**", value=str(i))
+            embed.add_field(
+                name=f"`{track.title} - {track.author}`", value=str(i)
+            )
+
+        await interaction.response.send_message(embed=embed)
+
+    @client.tree.command(
+        name="queue_autoplay",
+        description="get list of tracks in the autoplay queue",
+    )
+    async def get_autoplay_queue(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
+
+        if player.auto_queue.is_empty:
+            await interaction.response.send_message("Autoplay queue is empty")
+            return
+
+        embed = discord.Embed(
+            title="Songs in autoplay queue:", colour=discord.Colour.random()
+        )
+
+        for i, track in enumerate(player.auto_queue, start=1):
+            embed.add_field(
+                name=f"`{track.title} - {track.author}`", value=str(i)
+            )
 
         await interaction.response.send_message(embed=embed)
 
@@ -72,38 +103,38 @@ def add_queue_commands(client: CustomClient) -> None:
     )
     async def play_next(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
-        skipped_item = player.current
+        skipped_item = await player.skip()
 
         if not skipped_item:
             await interaction.response.send_message("Nothing to skip")
             return
 
-        if player.queue.is_empty:
-            await player.stop()
-            await interaction.response.send_message(
-                f"Skipping **{skipped_item.title}**"
-            )
-            await interaction.followup.send("This was the last one in queue")
-            await client.change_presence(status=discord.Status.idle)
-            return
-
-        current_item = player.queue.get()
-
-        await player.play(current_item)
         await interaction.response.send_message(
-            f"Skipping **{skipped_item.title}**"
+            f"Skipping **`{skipped_item.title} - {skipped_item.author}`**"
         )
-        await interaction.followup.send(f"Playing **{current_item.title}**")
+        if not player.playing:
+            await interaction.followup.send("Finished playing queue")
 
     @client.tree.command(name="loop", description="loop current track")
     async def loop_track(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
-        is_looped = not player.queue.loop
-        player.queue.loop = is_looped
+        is_looped = player.queue.mode == QueueMode.normal
 
-        if is_looped and (current := player.current):
-            player.queue.put_at_front(current)
+        player.queue.mode = QueueMode.loop if is_looped else QueueMode.normal
 
         await interaction.response.send_message(
             f"Current track is {'' if is_looped else 'un'}looped"
         )
+
+    @client.tree.command(name="autoplay", description="toggle autoplay")
+    async def toggle_autoplay(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
+
+        player.autoplay = (
+            AutoPlayMode.enabled
+            if player.autoplay == AutoPlayMode.disabled
+            else AutoPlayMode.disabled
+        )
+
+        state = "" if player.autoplay != AutoPlayMode.disabled else "not "
+        await interaction.response.send_message(f"Autoplay is {state}enabled")

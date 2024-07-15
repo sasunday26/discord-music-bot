@@ -6,37 +6,25 @@ from datetime import timedelta
 import discord
 import wavelink
 from discord import app_commands
+from wavelink.types.filters import Equalizer
 
 from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
 
 
 def add_audio_commands(client: CustomClient) -> None:
-    @client.tree.command(
-        name="pause", description="pause the currently playing song"
-    )
+    @client.tree.command(name="pause", description="pause/resume current song")
     async def pause(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
-        if not player.is_playing():
+        if not player.playing:
             await interaction.response.send_message("Not playing")
             return
 
-        await player.pause()
-        await interaction.response.send_message("Paused playback")
-
-    @client.tree.command(
-        name="resume", description="resume playing the currently paused song"
-    )
-    async def resume(interaction: discord.Interaction) -> None:
-        player = await get_current_player(interaction)
-
-        if not player.is_paused():
-            await interaction.response.send_message("Not paused")
-            return
-
-        await player.resume()
-        await interaction.response.send_message("Resuming playback")
+        await player.pause(not player.paused)
+        await interaction.response.send_message(
+            "Paused" if player.paused else "Resumed"
+        )
 
     @client.tree.command(
         name="shut_the_fuck_up", description="SHUT THE FUCK UP"
@@ -127,23 +115,18 @@ def add_audio_commands(client: CustomClient) -> None:
 
         # for example: [(1, 0.75), (2, 0.8), (3, 0.5)]
         # in this example, three low frequency bands are amplified
-        bands: list[tuple[int, float]] = []
+        bands: list[Equalizer] = []
         for param in settings.strip().split(" "):
             if not param:
                 continue
 
             band, gain = param.split(":")
-            bands.append((int(band), float(gain)))
+            bands.append(Equalizer(band=int(band), gain=float(gain)))
+        filters: wavelink.Filters = player.filters
+        filters.equalizer.set(bands=bands)
 
         try:
-            await player.set_filter(
-                wavelink.Filter(
-                    equalizer=wavelink.Equalizer(
-                        bands=bands,
-                    )
-                ),
-                seek=True,
-            )
+            await player.set_filters(filters, seek=True)
         except ValueError:
             await interaction.response.send_message("Invalid value")
             return
@@ -162,14 +145,21 @@ def add_audio_commands(client: CustomClient) -> None:
     ) -> None:
         player = await get_current_player(interaction)
 
-        await player.set_filter(
-            wavelink.Filter(
-                timescale=wavelink.Timescale(
-                    speed=speed,
-                    pitch=pitch,
-                )
-            ),
-            seek=True,
-        )
+        filters: wavelink.Filters = player.filters
+        filters.timescale.set(speed=speed, pitch=pitch)
 
+        await player.set_filters(filters, seek=True)
         await interaction.response.send_message("New speed applied")
+
+    @client.tree.command(
+        name="reset_filters",
+        description="reset all filters settings (equalizer, speed, volume )",
+    )
+    async def reset_filters(interaction: discord.Interaction) -> None:
+        player = await get_current_player(interaction)
+
+        filters: wavelink.Filters = player.filters
+        filters.reset()
+
+        await player.set_filters(filters, seek=True)
+        await interaction.response.send_message("Filters reset")
