@@ -77,6 +77,20 @@ def add_streaming_commands(client: CustomClient) -> None:
             await asyncio.sleep(0.25)
 
             if player.position >= config.OUTRO_VIDEO["timestamp_ms"]:
+                voice = None
+                if isinstance(interaction.user, discord.Member):
+                    voice = interaction.user.voice
+
+                if voice and voice.channel:
+                    voice_channel = voice.channel
+                    background_tasks = set()
+
+                    for member in voice_channel.members:
+                        if not member.bot:
+                            task = asyncio.create_task(member.move_to(None))
+                            background_tasks.add(task)
+                            task.add_done_callback(background_tasks.discard)
+
                 await player.disconnect()
                 await client.change_presence(status=discord.Status.idle)
 
