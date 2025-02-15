@@ -1,9 +1,11 @@
+import asyncio
 import logging
 
 import discord
 import wavelink
 from wavelink import QueueMode, AutoPlayMode
 
+from . import config
 from .client import CustomClient
 
 
@@ -105,3 +107,35 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
     @client.event
     async def on_ready():
         await client.tree.sync()
+
+    @client.event
+    async def on_voice_state_update(
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
+    ) -> None:
+        for player in client.voice_clients:
+            if (
+                before.channel
+                and len(before.channel.members) == 1
+                and not after.channel
+            ):
+                if player.channel == before.channel:
+                    await asyncio.sleep(config.LEAVE_AFTER)
+
+                    if isinstance(player.channel, discord.VoiceChannel):
+                        channel = await client.fetch_channel(player.channel.id)
+                        if (
+                            isinstance(channel, discord.VoiceChannel)
+                            and len(channel.members) == 1
+                            and player in client.voice_clients
+                        ):
+                            await player.disconnect(force=False)
+
+                            if hasattr(player, "home"):
+                                await player.home.send(
+                                    "No one in the voice channel. Leaving..."
+                                )
+                            await client.change_presence(
+                                status=discord.Status.idle
+                            )
