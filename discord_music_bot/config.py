@@ -18,4 +18,6 @@ with env.prefixed("OUTRO_VIDEO_"):
         "timestamp_ms": env.int("TIMESTAMP_MS"),
     }
 
+LEAVE_AFTER: int = env.int("LEAVE_EMPTY_CHANNEL_AFTER_SEC")
+
 LOGGING_CONFIG: dict = env.json("LOGGING_CONFIG")
