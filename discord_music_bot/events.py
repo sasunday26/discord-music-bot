@@ -63,6 +63,9 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
             f"because {payload.reason}"
         )
 
+        if not payload.player:
+            return
+
         if (
             payload.player.queue.mode == QueueMode.loop
             and payload.reason == "finished"
@@ -85,7 +88,8 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
         ):
             delattr(payload.player, "last_track")
 
-        await payload.player.play(payload.player.queue.get())
+        if payload.player in client.voice_clients:
+            await payload.player.play(payload.player.queue.get())
 
     @client.event
     async def on_message(message: discord.Message) -> None:
