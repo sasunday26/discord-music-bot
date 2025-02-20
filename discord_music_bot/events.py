@@ -112,6 +112,9 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
     async def on_ready():
         await client.tree.sync()
 
+    def is_alone_in_voice_channel(channel: discord.VoiceChannel) -> bool:
+        return len(channel.members) == 1
+
     @client.event
     async def on_voice_state_update(
         member: discord.Member,
@@ -119,22 +122,30 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
         after: discord.VoiceState,
     ) -> None:
         for player in client.voice_clients:
-            if (
-                isinstance(player.channel, discord.VoiceChannel)
-                and len(player.channel.members) == 1
+            trigger_channel = player.channel
+
+            if not (
+                isinstance(trigger_channel, discord.VoiceChannel)
+                and is_alone_in_voice_channel(trigger_channel)
             ):
-                await asyncio.sleep(config.LEAVE_AFTER)
+                continue
 
-                channel = await client.fetch_channel(player.channel.id)
-                if (
-                    isinstance(channel, discord.VoiceChannel)
-                    and len(channel.members) == 1
-                    and player in client.voice_clients
-                ):
-                    await player.disconnect(force=False)
+            await asyncio.sleep(config.LEAVE_AFTER)
 
-                    if hasattr(player, "home"):
-                        await player.home.send(
-                            "No one in the voice channel. Leaving..."
-                        )
-                    await client.change_presence(status=discord.Status.idle)
+            current_channel = await client.fetch_channel(trigger_channel.id)
+
+            if not (
+                isinstance(current_channel, discord.VoiceChannel)
+                and is_alone_in_voice_channel(current_channel)
+                and player in client.voice_clients
+            ):
+                return
+
+            await player.disconnect(force=False)
+
+            if hasattr(player, "home"):
+                await player.home.send(
+                    "No one in the voice channel. Leaving..."
+                )
+
+            await client.change_presence(status=discord.Status.idle)
