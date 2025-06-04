@@ -1,6 +1,5 @@
 # mypy: disable-error-code=arg-type
 import discord
-from discord import app_commands
 
 from ..client import CustomClient
 from ..helpers import get_current_player
