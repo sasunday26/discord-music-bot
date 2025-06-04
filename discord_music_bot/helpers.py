@@ -5,7 +5,7 @@ import wavelink
 
 
 def format_timedelta(delta: timedelta) -> str:
-    seconds = delta.seconds
+    seconds = int(delta.total_seconds())
     hours, remainder = divmod(seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
 
