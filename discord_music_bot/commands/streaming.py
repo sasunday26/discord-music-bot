@@ -10,6 +10,50 @@ from .. import config
 from ..client import CustomClient
 
 
+async def ensure_voice_channel(
+    interaction: discord.Interaction,
+) -> wavelink.Player:
+    if not interaction.user:
+        raise discord.DiscordException("interaction.user is None")
+
+    if not isinstance(interaction.user, discord.Member):
+        raise discord.DiscordException(
+            "interaction.user is not a discord.Member object"
+        )
+
+    author_voice = interaction.user.voice
+
+    if not author_voice:
+        await interaction.response.send_message("You're not in a voice channel")
+        raise discord.DiscordException("interaction.user.voice is None")
+
+    if not interaction.guild:
+        raise discord.DiscordException("interaction.guild is None")
+
+    player: wavelink.Player = interaction.guild.voice_client
+
+    if not player and author_voice.channel:
+        player = await author_voice.channel.connect(cls=wavelink.Player)
+        return player
+
+    if author_voice.channel != player.channel:
+        await interaction.response.send_message("You're in a different channel")
+        raise discord.DiscordException(
+            "user is in a different voice channel"
+        )
+
+    return player
+
+
+async def start_playing(player: wavelink.Player) -> None:
+    if player.playing or player.queue.is_empty:
+        return
+
+    next_item = player.queue.get()
+
+    await player.play(next_item)
+
+
 def add_streaming_commands(client: CustomClient) -> None:
     @client.tree.command(
         name="play",
@@ -94,48 +138,3 @@ def add_streaming_commands(client: CustomClient) -> None:
                 await player.disconnect()
                 await client.change_presence(status=discord.Status.idle)
 
-    async def ensure_voice_channel(
-        interaction: discord.Interaction,
-    ) -> wavelink.Player:
-        if not interaction.user:
-            raise discord.DiscordException("interaction.user is None")
-
-        if not isinstance(interaction.user, discord.Member):
-            raise discord.DiscordException(
-                "interaction.user is not a discord.Member object"
-            )
-
-        author_voice = interaction.user.voice
-
-        if not author_voice:
-            await interaction.response.send_message(
-                "You're not in a voice channel"
-            )
-            raise discord.DiscordException("interaction.user.voice is None")
-
-        if not interaction.guild:
-            raise discord.DiscordException("interaction.guild is None")
-
-        player: wavelink.Player = interaction.guild.voice_client
-
-        if not player and author_voice.channel:
-            player = await author_voice.channel.connect(cls=wavelink.Player)
-            return player
-
-        if author_voice.channel != player.channel:
-            await interaction.response.send_message(
-                "You're in a different channel"
-            )
-            raise discord.DiscordException(
-                "user is in a different voice channel"
-            )
-
-        return player
-
-    async def start_playing(player: wavelink.Player) -> None:
-        if player.playing or player.queue.is_empty:
-            return
-
-        next_item = player.queue.get()
-
-        await player.play(next_item)
