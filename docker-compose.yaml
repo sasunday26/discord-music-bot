@@ -10,6 +10,8 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    restart:
+      unless-stopped
 
   lavalink:
     image: fredboat/lavalink:4
@@ -18,8 +20,12 @@ services:
     healthcheck:
       test: 'echo lavalink'
       interval: 1s
+    restart:
+      unless-stopped
 
   yt-cipher:
     image: ghcr.io/kikkia/yt-cipher:master
     ports:
       - "8001:8000"
+    restart:
+      unless-stopped

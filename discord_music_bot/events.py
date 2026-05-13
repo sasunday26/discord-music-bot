@@ -1,95 +1,53 @@
 import asyncio
 import logging
-
 import discord
-import wavelink
-from wavelink import QueueMode, AutoPlayMode
+import lavalink
 
 from . import config
 from .client import CustomClient
 
-
 def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
-    @client.event
-    async def on_wavelink_track_start(
-        payload: wavelink.TrackStartEventPayload,
-    ) -> None:
-        player: wavelink.Player | None = payload.player
-        if not player:
-            return
+    async def lavalink_hook(event: lavalink.events.Event):
+        if isinstance(event, lavalink.events.TrackStartEvent):
+            player = event.player
+            track = event.track
 
-        original: wavelink.Playable | None = payload.original
-        track: wavelink.Playable = payload.track
+            embed: discord.Embed = discord.Embed(
+                title="Now Playing", colour=discord.Colour.random()
+            )
+            embed.description = f"**{track.title}** by `{track.author}`"
 
-        if player.queue.mode == QueueMode.loop:
-            if not hasattr(player, "last_track"):
-                player.last_track = track
-            elif player.last_track == track:
-                return
+            if track.artwork_url:
+                embed.set_image(url=track.artwork_url)
 
-        embed: discord.Embed = discord.Embed(
-            title="Now Playing", colour=discord.Colour.random()
-        )
-        embed.description = f"**{track.title}** by `{track.author}`"
+            # autoplay is handled differently now
 
-        if track.artwork:
-            embed.set_image(url=track.artwork)
-
-        if original and original.recommended:
-            embed.description += (
-                f"\n\n`This track was recommended via {track.source}`"
+            await client.change_presence(
+                activity=discord.Activity(
+                    name=f"{track.title} - {track.author}",
+                    type=discord.ActivityType.listening,
+                ),
+                status=discord.Status.online,
             )
 
-        if track.album.name:
-            embed.add_field(name="Album", value=track.album.name)
+            channel_id = player.fetch("channel_id")
+            if channel_id:
+                channel = client.get_channel(int(channel_id))
+                if channel:
+                    await channel.send(embed=embed)
 
-        await player.home.send(embed=embed)
+        elif isinstance(event, lavalink.events.TrackEndEvent):
+            logger.info(
+                f"track {event.track.title} finished playing, "
+                f"because {event.reason}"
+            )
+            
+            player = event.player
 
-        await client.change_presence(
-            activity=discord.Activity(
-                name=f'{"(AP) " if original and original.recommended else ""}'
-                + f"{payload.track.title} - {payload.track.author}",
-                type=discord.ActivityType.listening,
-            ),
-            status=discord.Status.online,
-        )
-
-    @client.event
-    async def on_wavelink_track_end(
-        payload: wavelink.TrackEndEventPayload,
-    ) -> None:
-        logger.info(
-            f"track {payload.track} finished playing, "
-            f"because {payload.reason}"
-        )
-
-        if not payload.player:
-            return
-
-        if (
-            payload.player.queue.mode == QueueMode.loop
-            and payload.reason == "finished"
-        ):
-            await payload.player.play(payload.track)
-            return
-
-        if (
-            payload.player.queue.is_empty
-            and payload.player.autoplay == AutoPlayMode.disabled
-        ):
-            await client.change_presence(status=discord.Status.idle)
-            return
-
-        if payload.reason == "replaced":
-            return
-
-        if payload.reason == "stopped" and hasattr(
-            payload.player, "last_track"
-        ):
-            delattr(payload.player, "last_track")
-
-        if payload.player in client.voice_clients:
-            await payload.player.play(payload.player.queue.get())
+            # When the last track finishes, reset status
+            if not player.queue and event.reason in ("finished", "stopped", "loadFailed", "FINISHED", "STOPPED", "LOAD_FAILED"):
+                await client.change_presence(activity=None, status=discord.Status.idle)
+                
 
     @client.event
     async def on_message(message: discord.Message) -> None:
@@ -111,6 +69,9 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
     @client.event
     async def on_ready():
         await client.tree.sync()
+        if not hasattr(client, 'lavalink_hooks_added') or not client.lavalink_hooks_added:
+            client.lavalink.add_event_hook(lavalink_hook)
+            client.lavalink_hooks_added = True
 
     def is_alone_in_voice_channel(channel: discord.VoiceChannel) -> bool:
         return len(channel.members) == 1
@@ -121,8 +82,14 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
         before: discord.VoiceState,
         after: discord.VoiceState,
     ) -> None:
-        for player in client.voice_clients:
-            trigger_channel = player.channel
+        if not hasattr(client, 'lavalink'):
+            return
+
+        for player in client.lavalink.player_manager.values():
+            if not player.is_connected:
+                continue
+                
+            trigger_channel = client.get_channel(int(player.channel_id))
 
             if not (
                 isinstance(trigger_channel, discord.VoiceChannel)
@@ -130,22 +97,32 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
             ):
                 continue
 
-            await asyncio.sleep(config.LEAVE_AFTER)
+            async def delayed_leave(p, chan_id):
+                await asyncio.sleep(config.LEAVE_AFTER)
 
-            current_channel = await client.fetch_channel(trigger_channel.id)
+                current_channel = client.get_channel(chan_id.id)
+                current_is_alone = is_alone_in_voice_channel(current_channel) if isinstance(current_channel, discord.VoiceChannel) else False
 
-            if not (
-                isinstance(current_channel, discord.VoiceChannel)
-                and is_alone_in_voice_channel(current_channel)
-                and player in client.voice_clients
-            ):
-                return
+                if not (
+                    isinstance(current_channel, discord.VoiceChannel)
+                    and current_is_alone
+                    and p.is_connected
+                ):
+                    return
 
-            await player.disconnect(force=False)
+                guild = client.get_guild(int(p.guild_id))
+                if guild and guild.voice_client:
+                    await guild.voice_client.disconnect(force=False)
+                else:
+                    await p.stop()
 
-            if hasattr(player, "home"):
-                await player.home.send(
-                    "No one in the voice channel. Leaving..."
-                )
+                text_channel_id = p.fetch("channel_id")
+                if text_channel_id:
+                    text_channel = client.get_channel(int(text_channel_id))
+                    if text_channel:
+                        await text_channel.send("No one in the voice channel. Leaving...")
 
-            await client.change_presence(status=discord.Status.idle)
+                await client.change_presence(activity=None, status=discord.Status.idle)
+
+            asyncio.create_task(delayed_leave(player, trigger_channel))
+

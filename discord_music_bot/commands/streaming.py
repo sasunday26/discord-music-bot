@@ -2,12 +2,11 @@
 import asyncio
 
 import discord
-import wavelink
+import lavalink
 from discord import app_commands
-from wavelink import TrackSource
 
 from .. import config
-from ..client import CustomClient
+from ..client import CustomClient, LavalinkVoiceClient
 
 
 def add_streaming_commands(client: CustomClient) -> None:
@@ -20,60 +19,63 @@ def add_streaming_commands(client: CustomClient) -> None:
     async def play_audio(
         interaction: discord.Interaction, *, query: str
     ) -> None:
+        if not interaction.response.is_done():
+            await interaction.response.defer()
+
         player = await ensure_voice_channel(interaction)
 
-        # Lock the player to this channel...
-        if not hasattr(player, "home"):
-            player.home = interaction.channel
-        elif player.home != interaction.channel:
-            await interaction.response.send_message(
-                f"You can only play songs in {player.home.mention},"
-                " as the player has already started there."
+        if not query.startswith("http"):
+            query = f"ytsearch:{query}"
+
+        results = await player.node.get_tracks(query)
+
+        if not results or not results.tracks:
+            await interaction.followup.send(
+                f"No search results for query *{query}*"
             )
             return
 
-        tracks = await wavelink.Playable.search(
-            query, source=TrackSource.YouTube
-        )
-
-        if not tracks:
-            await interaction.response.send_message(
-                f"No search results for query *{query}*"
-            )
-
-        if isinstance(tracks, wavelink.Playlist):
-            added: int = await player.queue.put_wait(tracks)
-            await interaction.response.send_message(
-                f"Added the playlist **`{tracks.name}`** ({added} songs) to the queue."
+        if results.load_type == lavalink.LoadType.PLAYLIST:
+            for track in results.tracks:
+                player.add(requester=interaction.user.id, track=track)
+            await interaction.followup.send(
+                f"Added the playlist **`{results.playlist_info.name}`** ({len(results.tracks)} songs) to the queue."
             )
         else:
-            track: wavelink.Playable = tracks[0]
-            await player.queue.put_wait(track)
-            await interaction.response.send_message(
-                f"Added **`{track}`** to the queue."
+            track = results.tracks[0]
+            player.add(requester=interaction.user.id, track=track)
+            await interaction.followup.send(
+                f"Added **`{track.title}`** to the queue."
             )
 
-        await start_playing(player)
+        if not player.is_playing:
+            await player.play()
 
     @client.tree.command(name="outro", description="epic disconnect")
     async def play_n_leave(interaction: discord.Interaction) -> None:
+        if not interaction.response.is_done():
+            await interaction.response.defer()
+
         player = await ensure_voice_channel(interaction)
-        await interaction.response.send_message("It's time to go to sleep")
+        await interaction.followup.send("It's time to go to sleep")
 
         url = config.OUTRO_VIDEO["url"]
-        tracks = await wavelink.Playable.search(url)
+        results = await player.node.get_tracks(url)
 
-        if not tracks:
-            await interaction.response.send_message(
+        if not results or not results.tracks:
+            await interaction.followup.send(
                 f"Couldn't find the video, please verify that link is correct: '{url}'"
             )
+            return
 
-        track = tracks[0]
+        track = results.tracks[0]
 
         player.queue.clear()
+        
+        # lavalink play() instantly plays track, overriding current
         await player.play(track)
 
-        while player.current == track and player.playing:
+        while player.current and player.current.identifier == track.identifier and player.is_playing:
             await asyncio.sleep(0.25)
 
             if player.position >= config.OUTRO_VIDEO["timestamp_ms"]:
@@ -91,12 +93,14 @@ def add_streaming_commands(client: CustomClient) -> None:
                             background_tasks.add(task)
                             task.add_done_callback(background_tasks.discard)
 
-                await player.disconnect()
+                if interaction.guild and interaction.guild.voice_client:
+                    await interaction.guild.voice_client.disconnect(force=False)
                 await client.change_presence(status=discord.Status.idle)
+                break
 
     async def ensure_voice_channel(
         interaction: discord.Interaction,
-    ) -> wavelink.Player:
+    ) -> lavalink.DefaultPlayer:
         if not interaction.user:
             raise discord.DiscordException("interaction.user is None")
 
@@ -107,8 +111,8 @@ def add_streaming_commands(client: CustomClient) -> None:
 
         author_voice = interaction.user.voice
 
-        if not author_voice:
-            await interaction.response.send_message(
+        if not author_voice or not author_voice.channel:
+            await interaction.followup.send(
                 "You're not in a voice channel"
             )
             raise discord.DiscordException("interaction.user.voice is None")
@@ -116,14 +120,13 @@ def add_streaming_commands(client: CustomClient) -> None:
         if not interaction.guild:
             raise discord.DiscordException("interaction.guild is None")
 
-        player: wavelink.Player = interaction.guild.voice_client
+        player = interaction.client.lavalink.player_manager.create(interaction.guild.id)
+        player.store("channel_id", interaction.channel.id)
 
-        if not player and author_voice.channel:
-            player = await author_voice.channel.connect(cls=wavelink.Player)
-            return player
-
-        if author_voice.channel != player.channel:
-            await interaction.response.send_message(
+        if not interaction.guild.voice_client:
+            await author_voice.channel.connect(cls=LavalinkVoiceClient)
+        elif author_voice.channel != interaction.guild.voice_client.channel:
+            await interaction.followup.send(
                 "You're in a different channel"
             )
             raise discord.DiscordException(
@@ -131,11 +134,3 @@ def add_streaming_commands(client: CustomClient) -> None:
             )
 
         return player
-
-    async def start_playing(player: wavelink.Player) -> None:
-        if player.playing or player.queue.is_empty:
-            return
-
-        next_item = player.queue.get()
-
-        await player.play(next_item)

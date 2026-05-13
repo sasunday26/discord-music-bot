@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import discord
-import wavelink
+import lavalink
 
 
 def format_timedelta(delta: timedelta) -> str:
@@ -16,15 +16,15 @@ def format_timedelta(delta: timedelta) -> str:
 
 async def get_current_player(
     interaction: discord.Interaction,
-) -> wavelink.Player:
+) -> lavalink.DefaultPlayer:
     guild = interaction.guild
 
     if not guild:
         raise discord.DiscordException("interaction.guild is None")
 
-    player: wavelink.Player = guild.voice_client
+    player = interaction.client.lavalink.player_manager.get(guild.id)
 
-    if not player:
+    if not player or not player.is_connected:
         await interaction.response.send_message(
             "You're not in a voice channel"
         )

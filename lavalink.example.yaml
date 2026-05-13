@@ -3,6 +3,8 @@ server: # REST and WS server
   address: 0.0.0.0
 plugins:
   youtube:
+    remoteCipher:
+      url: "http://yt-cipher:8001"
     enabled: true # Whether this source can be used.
     allowSearch: true # Whether "ytsearch:" and "ytmsearch:" can be used.
     allowDirectVideoIds: true # Whether just video IDs can match. If false, only complete URLs will be loaded.

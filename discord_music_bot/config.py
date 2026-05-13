@@ -6,9 +6,10 @@ env.read_env(override=True)
 
 BOT_TOKEN: str = env.str("DISCORD_BOT_TOKEN")
 
-with env.prefixed("WAVELINK_NODE_"):
-    WAVELINK_CONFIG: dict = {
-        "uri": env.str("URI"),
+with env.prefixed("LAVALINK_NODE_"):
+    LAVALINK_CONFIG: dict = {
+        "host": env.str("HOST"),
+        "port": env.int("PORT"),
         "password": env.str("PASSWORD"),
     }
 

@@ -4,9 +4,9 @@ import re
 from datetime import timedelta
 
 import discord
-import wavelink
+import lavalink
 from discord import app_commands
-from wavelink.types.filters import Equalizer
+from lavalink.filters import Equalizer, Timescale
 
 from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
@@ -17,11 +17,11 @@ def add_audio_commands(client: CustomClient) -> None:
     async def pause(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
-        if not player.playing:
+        if not player.is_playing:
             await interaction.response.send_message("Not playing")
             return
 
-        await player.pause(not player.paused)
+        await player.set_pause(not player.paused)
         await interaction.response.send_message(
             "Paused" if player.paused else "Resumed"
         )
@@ -32,12 +32,16 @@ def add_audio_commands(client: CustomClient) -> None:
     async def leave(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
-        await player.disconnect()
+        if interaction.guild and interaction.guild.voice_client:
+            await interaction.guild.voice_client.disconnect(force=False)
+        else:
+            await player.stop()
+            
         await interaction.response.send_message("Ok")
         await client.change_presence(status=discord.Status.idle)
 
     @client.tree.command(name="volume", description="set audio volume")
-    @app_commands.describe(volume="percentage from 0 to 1000")
+    @app_commands.describe(volume="percentage from 0 to 100")
     async def set_volume(
         interaction: discord.Interaction,
         *,
@@ -67,9 +71,6 @@ def add_audio_commands(client: CustomClient) -> None:
             )
             return
 
-        # matches \d+:\d+:\d+, \d+:\d+ and \d+
-        # this allows entering position as a number of seconds.
-        # for example, 300 will be treated as 5 minutes.
         matches = re.match(r"^(?:(?:(\d+):)?(\d+):)?(\d+)$", position)
 
         if not matches:
@@ -81,7 +82,7 @@ def add_audio_commands(client: CustomClient) -> None:
         )
         position_td = timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
-        duration = timedelta(seconds=player.current.length)
+        duration = timedelta(milliseconds=player.current.duration)
         if duration < position_td:
             await interaction.response.send_message(
                 "Track's total length is "
@@ -109,24 +110,19 @@ def add_audio_commands(client: CustomClient) -> None:
     ) -> None:
         player = await get_current_player(interaction)
 
-        # bands is list of tuples that contain band number and its gain,
-        # where band is a frequency and gain is its amplification factor.
-        # the lower the band number, the lower the frequency
-
-        # for example: [(1, 0.75), (2, 0.8), (3, 0.5)]
-        # in this example, three low frequency bands are amplified
-        bands: list[Equalizer] = []
+        bands = []
         for param in settings.strip().split(" "):
             if not param:
                 continue
 
             band, gain = param.split(":")
-            bands.append(Equalizer(band=int(band), gain=float(gain)))
-        filters: wavelink.Filters = player.filters
-        filters.equalizer.set(bands=bands)
+            bands.append((int(band), float(gain)))
+            
+        eq = Equalizer()
+        eq.update(bands=bands)
 
         try:
-            await player.set_filters(filters, seek=True)
+            await player.set_filter(eq)
         except ValueError:
             await interaction.response.send_message("Invalid value")
             return
@@ -145,10 +141,10 @@ def add_audio_commands(client: CustomClient) -> None:
     ) -> None:
         player = await get_current_player(interaction)
 
-        filters: wavelink.Filters = player.filters
-        filters.timescale.set(speed=speed, pitch=pitch)
+        ts = Timescale()
+        ts.update(speed=speed, pitch=pitch)
 
-        await player.set_filters(filters, seek=True)
+        await player.set_filter(ts)
         await interaction.response.send_message("New speed applied")
 
     @client.tree.command(
@@ -158,8 +154,5 @@ def add_audio_commands(client: CustomClient) -> None:
     async def reset_filters(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
-        filters: wavelink.Filters = player.filters
-        filters.reset()
-
-        await player.set_filters(filters, seek=True)
+        await player.clear_filters()
         await interaction.response.send_message("Filters reset")

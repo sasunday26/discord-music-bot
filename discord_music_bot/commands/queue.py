@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 import discord
-from wavelink import QueueMode, AutoPlayMode
+import lavalink
 
 from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
@@ -34,17 +34,14 @@ def add_queue_commands(client: CustomClient) -> None:
         position = timedelta(seconds=player.position // 1000)
         embed.add_field(name="Position", value=format_timedelta(position))
 
-        duration = timedelta(seconds=track.length // 1000)
+        duration = timedelta(seconds=track.duration // 1000)
         embed.add_field(name="Duration", value=format_timedelta(duration))
 
         if track.uri:
             embed.add_field(name="Link", value=track.uri)
 
-        if track.artwork:
-            embed.set_image(url=track.artwork)
-
-        if track.album.name:
-            embed.add_field(name="Album", value=track.album.name)
+        if track.artwork_url:
+            embed.set_image(url=track.artwork_url)
 
         await interaction.response.send_message(embed=embed)
 
@@ -54,7 +51,7 @@ def add_queue_commands(client: CustomClient) -> None:
     async def get_queue(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
-        if player.queue.is_empty:
+        if not player.queue:
             await interaction.response.send_message("Queue is empty")
             return
 
@@ -71,25 +68,10 @@ def add_queue_commands(client: CustomClient) -> None:
 
     @client.tree.command(
         name="queue_autoplay",
-        description="get list of tracks in the autoplay queue",
+        description="get list of tracks in the autoplay queue (NOT IMPLEMENTED IN LAVALINK)",
     )
     async def get_autoplay_queue(interaction: discord.Interaction) -> None:
-        player = await get_current_player(interaction)
-
-        if player.auto_queue.is_empty:
-            await interaction.response.send_message("Autoplay queue is empty")
-            return
-
-        embed = discord.Embed(
-            title="Songs in autoplay queue:", colour=discord.Colour.random()
-        )
-
-        for i, track in enumerate(player.auto_queue, start=1):
-            embed.add_field(
-                name=f"`{track.title} - {track.author}`", value=str(i)
-            )
-
-        await interaction.response.send_message(embed=embed)
+        await interaction.response.send_message("Autoplay is not implemented natively in lavalink.")
 
     @client.tree.command(name="clear", description="clear the queue")
     async def clear_queue(interaction: discord.Interaction) -> None:
@@ -103,38 +85,40 @@ def add_queue_commands(client: CustomClient) -> None:
     )
     async def play_next(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
-        skipped_item = await player.skip()
+        
+        if not player.current:
+             await interaction.response.send_message("Nothing to skip")
+             return
 
-        if not skipped_item:
-            await interaction.response.send_message("Nothing to skip")
-            return
+        skipped_title = player.current.title
+        skipped_author = player.current.author
+        
+        await player.skip()
 
         await interaction.response.send_message(
-            f"Skipping **`{skipped_item.title} - {skipped_item.author}`**"
+            f"Skipping **`{skipped_title} - {skipped_author}`**"
         )
-        if not player.playing:
+        if not player.is_playing:
             await interaction.followup.send("Finished playing queue")
 
     @client.tree.command(name="loop", description="loop current track")
     async def loop_track(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
-        is_looped = player.queue.mode == QueueMode.normal
-
-        player.queue.mode = QueueMode.loop if is_looped else QueueMode.normal
+        # Loop Queue vs Loop None vs Loop Single
+        # We will loop single track
+        is_looped = player.loop == lavalink.Loop.SINGLE if hasattr(lavalink, "Loop") else getattr(player, "loop", 0) == 1
+        
+        if not is_looped:
+             player.set_loop(1) # SINGLE
+             msg = "looped"
+        else:
+             player.set_loop(0) # NONE
+             msg = "unlooped"
 
         await interaction.response.send_message(
-            f"Current track is {'' if is_looped else 'un'}looped"
+            f"Current track is {msg}"
         )
 
-    @client.tree.command(name="autoplay", description="toggle autoplay")
+    @client.tree.command(name="autoplay", description="toggle autoplay (NOT SUPPORTED)")
     async def toggle_autoplay(interaction: discord.Interaction) -> None:
-        player = await get_current_player(interaction)
-
-        player.autoplay = (
-            AutoPlayMode.enabled
-            if player.autoplay == AutoPlayMode.disabled
-            else AutoPlayMode.disabled
-        )
-
-        state = "" if player.autoplay != AutoPlayMode.disabled else "not "
-        await interaction.response.send_message(f"Autoplay is {state}enabled")
+        await interaction.response.send_message("Autoplay is currently not natively supported by lavalink.")
