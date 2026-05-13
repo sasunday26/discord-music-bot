@@ -45,9 +45,9 @@ plugins:
       albumLoadLimit: 6 # The number of pages at 50 tracks each
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.16.0"
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.1"
     - dependency: "com.github.topi314.lavasearch:lavasearch-plugin:1.0.0"
-    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.1.1"
+    - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.8.1"
   server:
     password: "password"
     sources:
