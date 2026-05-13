@@ -32,11 +32,12 @@ def add_audio_commands(client: CustomClient) -> None:
     async def leave(interaction: discord.Interaction) -> None:
         player = await get_current_player(interaction)
 
+        player.queue.clear()
+        await player.stop()
+
         if interaction.guild and interaction.guild.voice_client:
             await interaction.guild.voice_client.disconnect(force=False)
-        else:
-            await player.stop()
-            
+
         await interaction.response.send_message("Ok")
         await client.change_presence(status=discord.Status.idle)
 
