@@ -3,6 +3,10 @@ server: # REST and WS server
   address: 0.0.0.0
 plugins:
   youtube:
+    oauth:
+      enabled: true
+      # refreshToken: ""   # paste after first device-code login, then set skipInitialization: true
+      skipInitialization: false
     remoteCipher:
       url: "http://yt-cipher:8001"
     enabled: true # Whether this source can be used.
