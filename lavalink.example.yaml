@@ -15,7 +15,6 @@ plugins:
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
     clients:
       - MUSIC
-      - TVHTML5EMBEDDED
       - WEBEMBEDDED
       - IOS
       - MWEB   # You can configure individual clients with the following.
@@ -23,13 +22,9 @@ plugins:
 
     # Any options or clients left unspecified will use their default values,
     # which enables everything for all clients.
-    WEB:
+    TV:
       playback: true
       videoLoading: true
-    TVHTML5EMBEDDED:
-      playlistLoading: true 
-      videoLoading: true
-      searching: true
   lavasrc:
     providers:
       - "ytsearch:\"%ISRC%\"" # Will be ignored if track does not have an ISRC. See https://en.wikipedia.org/wiki/International_Standard_Recording_Code
