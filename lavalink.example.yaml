@@ -44,6 +44,8 @@ lavalink:
     - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.1"
     - dependency: "com.github.topi314.lavasearch:lavasearch-plugin:1.0.0"
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.8.1"
+    - dependency: "com.github.Devoxin:LavaDSPX-Plugin:0.0.5"
+      repository: "https://jitpack.io"
   server:
     password: "password"
     sources:
@@ -102,4 +104,3 @@ logging:
     includeHeaders: false
     includeQueryString: true
     includePayload: true
-

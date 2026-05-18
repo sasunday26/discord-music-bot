@@ -4,9 +4,9 @@ import re
 from datetime import timedelta
 
 import discord
-import lavalink
 from discord import app_commands
 from lavalink.filters import Equalizer, Timescale
+from ..filters import Echo, LowPassPlugin
 
 from ..client import CustomClient
 from ..helpers import format_timedelta, get_current_player
@@ -118,7 +118,7 @@ def add_audio_commands(client: CustomClient) -> None:
 
             band, gain = param.split(":")
             bands.append((int(band), float(gain)))
-            
+
         eq = Equalizer()
         eq.update(bands=bands)
 
@@ -157,3 +157,40 @@ def add_audio_commands(client: CustomClient) -> None:
 
         await player.clear_filters()
         await interaction.response.send_message("Filters reset")
+
+    @client.tree.command(
+        name="slowreverb",
+        description="slowed + fake reverb preset (timescale + echo + low-pass)",
+    )
+    @app_commands.describe(
+        speed="playback speed (default 0.85)",
+        pitch="pitch multiplier (default 0.85)",
+        echo_length="echo delay seconds (default 0.15)",
+        decay="echo decay 0-1 (default 0.4)",
+        cutoff="low-pass cutoff Hz (default 1500)",
+    )
+    async def slow_reverb(
+        interaction: discord.Interaction,
+        speed: app_commands.Range[float, 0.1, 2.0] = 0.85,
+        pitch: app_commands.Range[float, 0.1, 2.0] = 0.85,
+        echo_length: app_commands.Range[float, 0.0, 1.0] = 0.15,
+        decay: app_commands.Range[float, 0.0, 1.0] = 0.4,
+        cutoff: app_commands.Range[int, 100, 20000] = 1500,
+    ) -> None:
+        player = await get_current_player(interaction)
+
+        ts = Timescale()
+        ts.update(speed=speed, pitch=pitch)
+
+        echo = Echo()
+        echo.update(echo_length=echo_length, decay=decay)
+
+        lp = LowPassPlugin()
+        lp.update(cutoff_frequency=cutoff)
+
+        await player.set_filters(ts, echo, lp, replace=True)
+        await interaction.response.send_message(
+            f"Applied slowed+reverb (speed={speed}, pitch={pitch}, "
+            f"echo={echo_length}s decay={decay}, cutoff={cutoff}Hz). "
+            f"Use /reset_filters to clear."
+        )
