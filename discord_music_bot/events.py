@@ -74,7 +74,10 @@ def add_client_events(client: CustomClient, logger: logging.Logger) -> None:
             client.lavalink_hooks_added = True
 
     def is_alone_in_voice_channel(channel: discord.VoiceChannel) -> bool:
-        return len(channel.members) == 1
+        # voice_states, not members: the member cache misses anyone who was
+        # already in the channel when the bot connected, which made the bot
+        # think it was alone and leave while people were still listening
+        return len(channel.voice_states) == 1
 
     @client.event
     async def on_voice_state_update(

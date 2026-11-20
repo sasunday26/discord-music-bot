@@ -1,5 +1,6 @@
 # mypy: disable-error-code=arg-type
 import asyncio
+import logging
 
 import discord
 import lavalink
@@ -7,6 +8,8 @@ from discord import app_commands
 
 from .. import config
 from ..client import CustomClient, LavalinkVoiceClient
+
+logger = logging.getLogger("discord_music_bot")
 
 
 def add_streaming_commands(client: CustomClient) -> None:
@@ -84,19 +87,51 @@ def add_streaming_commands(client: CustomClient) -> None:
                     voice = interaction.user.voice
 
                 if voice and voice.channel:
-                    voice_channel = voice.channel
-                    background_tasks = set()
+                    await kick_everyone(voice.channel)
 
-                    for member in voice_channel.members:
-                        if not member.bot:
-                            task = asyncio.create_task(member.move_to(None))
-                            background_tasks.add(task)
-                            task.add_done_callback(background_tasks.discard)
+                player.queue.clear()
+                await player.stop()
 
                 if interaction.guild and interaction.guild.voice_client:
                     await interaction.guild.voice_client.disconnect(force=False)
                 await client.change_presence(status=discord.Status.idle)
                 break
+
+    async def kick_everyone(
+        voice_channel: discord.VoiceChannel | discord.StageChannel,
+    ) -> None:
+        """Disconnect every human from the voice channel.
+
+        Iterates voice states rather than `voice_channel.members`: that
+        property is built from the member cache, and without the privileged
+        members intent the cache never learns about anyone who was already
+        sitting in the channel when the bot connected, so those members were
+        silently skipped. Voice states come straight from the gateway and
+        always list everyone actually in the channel.
+        """
+        guild = voice_channel.guild
+        members = []
+
+        for user_id in voice_channel.voice_states:
+            if client.user and user_id == client.user.id:
+                continue
+
+            member = guild.get_member(user_id) or await guild.fetch_member(user_id)
+
+            if not member.bot:
+                members.append(member)
+
+        results = await asyncio.gather(
+            *(member.move_to(None) for member in members),
+            return_exceptions=True,
+        )
+
+        for member, result in zip(members, results):
+            if isinstance(result, BaseException):
+                logger.warning(
+                    f"couldn't disconnect {member.display_name} "
+                    f"from the voice channel: {result!r}"
+                )
 
     async def ensure_voice_channel(
         interaction: discord.Interaction,
