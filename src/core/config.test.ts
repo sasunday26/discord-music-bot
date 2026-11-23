@@ -40,7 +40,7 @@ describe("parseBotConfig", () => {
     ["https://lavalink.example.com:8443", { url: "lavalink.example.com:8443", secure: true }],
   ])("parses LAVALINK_URI %s", (uri, expected) => {
     const config = parseBotConfig({ ...validEnv, LAVALINK_URI: uri });
-    expect(config.kind === "ok" && config.value.lavalink).toEqual({
+    expect(config.isOk() && config.value.lavalink).toEqual({
       ...expected,
       password: "youshallnotpass",
     });
@@ -48,12 +48,12 @@ describe("parseBotConfig", () => {
 
   it.each(["debug", "info", "warn", "error"])("accepts LOG_LEVEL %s", (level) => {
     const config = parseBotConfig({ ...validEnv, LOG_LEVEL: level });
-    expect(config.kind === "ok" && config.value.log.level).toBe(level);
+    expect(config.isOk() && config.value.log.level).toBe(level);
   });
 
   it("defaults an empty LOG_LEVEL to info", () => {
     const config = parseBotConfig({ ...validEnv, LOG_LEVEL: "" });
-    expect(config.kind === "ok" && config.value.log.level).toBe("info");
+    expect(config.isOk() && config.value.log.level).toBe("info");
   });
 
   it.each(requiredVariables)("reports missing %s", (variable) => {

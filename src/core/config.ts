@@ -71,29 +71,29 @@ const logLevel = (raw: string): Result<LogLevel, "invalid"> =>
 
 const parseBotConfig = (env: Env): Result<BotConfig, ConfigError> => {
   const botToken = field(env, "DISCORD_BOT_TOKEN", text);
-  if (botToken.kind === "error") return err(botToken.error);
+  if (botToken.isErr()) return err(botToken.error);
 
   const lavalink = field(env, "LAVALINK_URI", lavalinkUri);
-  if (lavalink.kind === "error") return err(lavalink.error);
+  if (lavalink.isErr()) return err(lavalink.error);
 
   const lavalinkPassword = field(env, "LAVALINK_PASSWORD", text);
-  if (lavalinkPassword.kind === "error") return err(lavalinkPassword.error);
+  if (lavalinkPassword.isErr()) return err(lavalinkPassword.error);
 
   const outroUrl = field(env, "OUTRO_VIDEO_URL", (raw) =>
     httpUrl(raw).map((url) => url.href),
   );
-  if (outroUrl.kind === "error") return err(outroUrl.error);
+  if (outroUrl.isErr()) return err(outroUrl.error);
 
   const outroTimestampMs = field(env, "OUTRO_VIDEO_TIMESTAMP_MS", positiveInt);
-  if (outroTimestampMs.kind === "error") return err(outroTimestampMs.error);
+  if (outroTimestampMs.isErr()) return err(outroTimestampMs.error);
 
   const leaveAfterSec = field(env, "LEAVE_EMPTY_CHANNEL_AFTER_SEC", positiveInt);
-  if (leaveAfterSec.kind === "error") return err(leaveAfterSec.error);
+  if (leaveAfterSec.isErr()) return err(leaveAfterSec.error);
 
   const level = env.LOG_LEVEL
     ? field(env, "LOG_LEVEL", logLevel)
     : ok<LogLevel>("info");
-  if (level.kind === "error") return err(level.error);
+  if (level.isErr()) return err(level.error);
 
   return ok({
     discord: { botToken: botToken.value },
@@ -115,10 +115,10 @@ const parseRegisterCommandsConfig = (
   env: Env,
 ): Result<RegisterCommandsConfig, ConfigError> => {
   const botToken = field(env, "DISCORD_BOT_TOKEN", text);
-  if (botToken.kind === "error") return err(botToken.error);
+  if (botToken.isErr()) return err(botToken.error);
 
   const clientId = field(env, "DISCORD_CLIENT_ID", text);
-  if (clientId.kind === "error") return err(clientId.error);
+  if (clientId.isErr()) return err(clientId.error);
 
   return ok({
     discord: { botToken: botToken.value, clientId: clientId.value },

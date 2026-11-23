@@ -27,11 +27,11 @@ describe("err", () => {
 });
 
 describe("narrowing", () => {
-	it("exposes value only after checking kind", () => {
+	it("exposes value only after isOk", () => {
 		// @ts-expect-error value is not available on the error variant
 		succeeded.value;
 
-		if (succeeded.kind === "ok") {
+		if (succeeded.isOk()) {
 			expectTypeOf(succeeded.value).toEqualTypeOf<number>();
 		} else {
 			expectTypeOf(succeeded.error).toEqualTypeOf<"boom">();
@@ -40,7 +40,7 @@ describe("narrowing", () => {
 
 	it("is readonly", () => {
 		const mutate = (r: Result<number, never>) => {
-			if (r.kind === "ok") {
+			if (r.isOk()) {
 				// @ts-expect-error value is readonly
 				r.value = 3;
 			}

@@ -11,6 +11,14 @@ class Ok<T, E> {
     this.value = value;
   }
 
+  isOk(): this is Ok<T, E> {
+    return true;
+  }
+
+  isErr(): this is Err<T, E> {
+    return false;
+  }
+
   map<U>(f: (value: T) => U): Result<U, E> {
     return new Ok(f(this.value));
   }
@@ -30,6 +38,14 @@ class Err<T, E> {
 
   constructor(error: E) {
     this.error = error;
+  }
+
+  isOk(): this is Ok<T, E> {
+    return false;
+  }
+
+  isErr(): this is Err<T, E> {
+    return true;
   }
 
   map<U>(_f: (value: T) => U): Result<U, E> {
