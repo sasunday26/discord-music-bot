@@ -15,6 +15,10 @@ class Ok<T, E> {
     return new Ok(f(this.value));
   }
 
+  mapErr<F>(_f: (error: E) => F): Result<T, F> {
+    return new Ok(this.value);
+  }
+
   andThen<U, F>(f: (value: T) => Result<U, F>): Result<U, E | F> {
     return f(this.value);
   }
@@ -30,6 +34,10 @@ class Err<T, E> {
 
   map<U>(_f: (value: T) => U): Result<U, E> {
     return new Err(this.error);
+  }
+
+  mapErr<F>(f: (error: E) => F): Result<T, F> {
+    return new Err(f(this.error));
   }
 
   andThen<U, F>(_f: (value: T) => Result<U, F>): Result<U, E | F> {

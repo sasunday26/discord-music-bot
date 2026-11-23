@@ -67,6 +67,25 @@ describe("map", () => {
 	});
 });
 
+describe("mapErr", () => {
+	it("transforms the error", () => {
+		expect(failed.mapErr((e) => e.toUpperCase())).toEqual(err("BOOM"));
+	});
+
+	it("can change the error type", () => {
+		expectTypeOf(failed.mapErr((e) => ({ reason: e }))).toEqualTypeOf<
+			Result<number, { reason: "boom" }>
+		>();
+	});
+
+	it("passes success values through without calling f", () => {
+		const f = vi.fn((e: "boom") => e.length);
+
+		expect(succeeded.mapErr(f)).toEqual(ok(2));
+		expect(f).not.toHaveBeenCalled();
+	});
+});
+
 describe("andThen", () => {
 	const positive = (n: number) => (n > 0 ? ok(n) : err("not-positive"));
 
@@ -104,6 +123,10 @@ describe("laws", () => {
 
 	it.each([succeeded, failed])("map identity: %o", (r) => {
 		expect(r.map((x) => x)).toEqual(r);
+	});
+
+	it.each([succeeded, failed])("mapErr identity: %o", (r) => {
+		expect(r.mapErr((e) => e)).toEqual(r);
 	});
 
 	it("left identity: ok(x).andThen(f) equals f(x)", () => {
