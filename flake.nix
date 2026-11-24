@@ -6,7 +6,7 @@
     let
       forAllSystems =
         f:
-        nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+        nixpkgs.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (
           system: f nixpkgs.legacyPackages.${system}
         );
     in
