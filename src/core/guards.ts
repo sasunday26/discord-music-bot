@@ -106,4 +106,9 @@ const requireHomeChannel = (
 		? ok(undefined)
 		: err("different-text-channel");
 
-export type { GuardError, GuardOutcome, GuardPolicy };
+export {
+	evaluateGuardPolicy,
+	type GuardError,
+	type GuardOutcome,
+	type GuardPolicy,
+};
