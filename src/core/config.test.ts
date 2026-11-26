@@ -11,7 +11,37 @@ const validEnv = {
 	LEAVE_EMPTY_CHANNEL_AFTER_SEC: "300",
 };
 
-const requiredVariables = Object.keys(validEnv);
+const registerEnv = {
+	DISCORD_BOT_TOKEN: "token",
+	DISCORD_CLIENT_ID: "123456789012345678",
+};
+
+describe.each([
+	{ name: "parseBotConfig", parse: parseBotConfig, env: validEnv },
+	{
+		name: "parseRegisterCommandsConfig",
+		parse: parseRegisterCommandsConfig,
+		env: registerEnv,
+	},
+])("$name", ({ parse, env }) => {
+	it.each(Object.keys(env))("reports missing %s", (variable) => {
+		expect(parse({ ...env, [variable]: undefined })).toEqual(
+			err({ variable, problem: "missing" }),
+		);
+	});
+
+	it.each(Object.keys(env))("treats empty %s as missing", (variable) => {
+		expect(parse({ ...env, [variable]: "" })).toEqual(
+			err({ variable, problem: "missing" }),
+		);
+	});
+
+	it("reports the first error in declaration order", () => {
+		expect(parse({})).toEqual(
+			err({ variable: "DISCORD_BOT_TOKEN", problem: "missing" }),
+		);
+	});
+});
 
 describe("parseBotConfig", () => {
 	it("parses a valid env", () => {
@@ -68,18 +98,6 @@ describe("parseBotConfig", () => {
 		expect(config.isOk() && config.value.log.level).toBe("info");
 	});
 
-	it.each(requiredVariables)("reports missing %s", (variable) => {
-		expect(parseBotConfig({ ...validEnv, [variable]: undefined })).toEqual(
-			err({ variable, problem: "missing" }),
-		);
-	});
-
-	it.each(requiredVariables)("treats empty %s as missing", (variable) => {
-		expect(parseBotConfig({ ...validEnv, [variable]: "" })).toEqual(
-			err({ variable, problem: "missing" }),
-		);
-	});
-
 	it.each([
 		["LAVALINK_URI", "localhost:2333"],
 		["LAVALINK_URI", "ftp://localhost:2333"],
@@ -102,31 +120,14 @@ describe("parseBotConfig", () => {
 			err({ variable, problem: "invalid" }),
 		);
 	});
-
-	it("reports the first error in declaration order", () => {
-		expect(parseBotConfig({})).toEqual(
-			err({ variable: "DISCORD_BOT_TOKEN", problem: "missing" }),
-		);
-	});
 });
 
 describe("parseRegisterCommandsConfig", () => {
-	const registerEnv = {
-		DISCORD_BOT_TOKEN: "token",
-		DISCORD_CLIENT_ID: "123456789012345678",
-	};
-
 	it("parses a valid env without bot-only variables", () => {
 		expect(parseRegisterCommandsConfig(registerEnv)).toEqual(
 			ok({
 				discord: { botToken: "token", clientId: "123456789012345678" },
 			}),
 		);
-	});
-
-	it.each(Object.keys(registerEnv))("reports missing %s", (variable) => {
-		expect(
-			parseRegisterCommandsConfig({ ...registerEnv, [variable]: undefined }),
-		).toEqual(err({ variable, problem: "missing" }));
 	});
 });

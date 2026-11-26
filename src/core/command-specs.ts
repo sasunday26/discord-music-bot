@@ -93,7 +93,7 @@ type OptionError = {
 };
 
 const parseCommandOptions = (
-	options: OptionSpec[],
+	options: readonly OptionSpec[],
 	rawArgs: Readonly<Record<string, unknown>>,
 ): Result<Record<string, unknown>, OptionError> => {
 	const initial: Result<Record<string, unknown>, OptionError> = ok({});
