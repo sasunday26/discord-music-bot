@@ -33,6 +33,16 @@ type OptionSpec =
 			readonly max?: number;
 	  };
 
+type OptionValueMap = {
+	readonly string: string;
+	readonly int: number;
+	readonly number: number;
+};
+
+type ParsedArg<Options extends readonly OptionSpec[]> = {
+	readonly [O in Options[number] as O["name"]]: OptionValueMap[O["kind"]];
+};
+
 type CommandSpec = {
 	readonly description: string;
 	readonly guard: GuardPolicy;
