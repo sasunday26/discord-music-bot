@@ -7,7 +7,12 @@ import type { GuardPolicy } from "./guards.ts";
 import { COMMAND_NAMES, type CommandName } from "./model.ts";
 import { err, ok, type Result } from "./result.ts";
 
-type MinValue = { readonly kind: "gte" | "gt"; readonly value: number };
+type CommandSpec = {
+	readonly description: string;
+	readonly guard: GuardPolicy;
+	readonly options?: readonly OptionSpec[];
+};
+
 type OptionSpec =
 	| {
 			readonly kind: "string";
@@ -33,21 +38,28 @@ type OptionSpec =
 			readonly max?: number;
 	  };
 
+type MinValue = { readonly kind: "gte" | "gt"; readonly value: number };
+
+type ParsedArg<Options extends readonly OptionSpec[]> = {
+	readonly [O in Options[number] as O["name"]]: OptionValueMap[O["kind"]];
+};
+
 type OptionValueMap = {
 	readonly string: string;
 	readonly int: number;
 	readonly number: number;
 };
 
-type ParsedArg<Options extends readonly OptionSpec[]> = {
-	readonly [O in Options[number] as O["name"]]: OptionValueMap[O["kind"]];
-};
-
-type CommandSpec = {
-	readonly description: string;
-	readonly guard: GuardPolicy;
-	readonly options?: readonly OptionSpec[];
-};
+type ParsedCommand = {
+	readonly [K in CommandName]: (typeof COMMAND_SPECS)[K] extends {
+		options: readonly OptionSpec[];
+	}
+		? {
+				readonly name: K;
+				readonly args: ParsedArg<(typeof COMMAND_SPECS)[K]["options"]>;
+			}
+		: { readonly name: K };
+}[CommandName];
 
 const toDiscordCommandsJson = (
 	specs: Record<CommandName, CommandSpec>,
@@ -101,6 +113,11 @@ type OptionError = {
 	readonly optionName: string;
 	readonly problem: ParseError;
 };
+
+const parseCommand = (
+	name: CommandName,
+	rawArgs: Readonly<Record<string, unknown>>,
+): Result<ParsedCommand, OptionError> => {};
 
 const parseCommandOptions = (
 	options: readonly OptionSpec[],
