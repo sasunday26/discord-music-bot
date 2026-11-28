@@ -4,7 +4,7 @@ import {
 	type GuardError,
 	type GuardPolicy,
 } from "./guards.ts";
-import type { CommandCtx, GuildSession } from "./model.ts";
+import type { CommandCtx, GuildSession, VoiceChannel } from "./model.ts";
 import { err, ok } from "./result.ts";
 
 const session: GuildSession = {
@@ -18,13 +18,17 @@ const session: GuildSession = {
 	emptySinceMs: undefined,
 };
 
+const voiceChannel: VoiceChannel = {
+	id: "session-voice",
+	botCanJoin: true,
+	botCanSpeak: true,
+};
+
 const ctx: CommandCtx = {
 	interactionId: "interaction",
 	guildId: "guild",
 	channelId: "home-text",
-	voiceChannelId: "session-voice",
-	botCanJoinVoice: true,
-	botCanSpeakVoice: true,
+	voiceChannel,
 	nowMs: 0,
 };
 
@@ -38,10 +42,13 @@ describe.each<GuardPolicy>(["existing-session", "new-or-existing-session"])(
 		});
 
 		it("does not check bot voice permissions", () => {
-			const noPermissions = {
+			const noPermissions: CommandCtx = {
 				...ctx,
-				botCanJoinVoice: false,
-				botCanSpeakVoice: false,
+				voiceChannel: {
+					...voiceChannel,
+					botCanJoin: false,
+					botCanSpeak: false,
+				},
 			};
 			expect(evaluateGuardPolicy(policy, session, noPermissions)).toEqual(
 				ok({ kind: "existing-session", session }),
@@ -52,7 +59,7 @@ describe.each<GuardPolicy>(["existing-session", "new-or-existing-session"])(
 			[
 				"a caller outside any voice channel",
 				"user-not-in-voice-channel",
-				{ voiceChannelId: undefined },
+				{ voiceChannel: undefined },
 			],
 			[
 				"a command from another text channel",
@@ -62,7 +69,7 @@ describe.each<GuardPolicy>(["existing-session", "new-or-existing-session"])(
 			[
 				"a caller in another voice channel",
 				"different-voice-channel",
-				{ voiceChannelId: "other-voice" },
+				{ voiceChannel: { ...voiceChannel, id: "other-voice" } },
 			],
 		])("rejects %s with %s", (_, expected, overrides) => {
 			expect(
@@ -74,12 +81,15 @@ describe.each<GuardPolicy>(["existing-session", "new-or-existing-session"])(
 			[
 				"outside any voice channel and in another text channel",
 				"user-not-in-voice-channel",
-				{ voiceChannelId: undefined, channelId: "other-text" },
+				{ voiceChannel: undefined, channelId: "other-text" },
 			],
 			[
 				"in another voice channel and another text channel",
 				"different-text-channel",
-				{ voiceChannelId: "other-voice", channelId: "other-text" },
+				{
+					voiceChannel: { ...voiceChannel, id: "other-voice" },
+					channelId: "other-text",
+				},
 			],
 		])("reports a caller %s as %s", (_, expected, overrides) => {
 			expect(
@@ -97,12 +107,10 @@ describe("existing-session without a session", () => {
 	});
 
 	it("reports no-active-session before any other failure", () => {
-		const failsEverything = {
+		const failsEverything: CommandCtx = {
 			...ctx,
 			channelId: "other-text",
-			voiceChannelId: undefined,
-			botCanJoinVoice: false,
-			botCanSpeakVoice: false,
+			voiceChannel: undefined,
 		};
 		expect(
 			evaluateGuardPolicy("existing-session", undefined, failsEverything),
@@ -115,22 +123,22 @@ describe("new-or-existing-session without a session", () => {
 		expect(
 			evaluateGuardPolicy("new-or-existing-session", undefined, {
 				...ctx,
-				voiceChannelId: "caller-voice",
+				voiceChannel: { ...voiceChannel, id: "caller-voice" },
 			}),
 		).toEqual(
 			ok({ kind: "new-session", callerVoiceChannelId: "caller-voice" }),
 		);
 	});
 
-	it.each<[string, Partial<CommandCtx>]>([
-		["join", { botCanJoinVoice: false }],
-		["speak", { botCanSpeakVoice: false }],
-		["join and speak", { botCanJoinVoice: false, botCanSpeakVoice: false }],
+	it.each<[string, Partial<VoiceChannel>]>([
+		["join", { botCanJoin: false }],
+		["speak", { botCanSpeak: false }],
+		["join and speak", { botCanJoin: false, botCanSpeak: false }],
 	])("rejects when the bot lacks %s permission", (_, overrides) => {
 		expect(
 			evaluateGuardPolicy("new-or-existing-session", undefined, {
 				...ctx,
-				...overrides,
+				voiceChannel: { ...voiceChannel, ...overrides },
 			}),
 		).toEqual(err("not-enough-permissions"));
 	});
@@ -139,7 +147,7 @@ describe("new-or-existing-session without a session", () => {
 		expect(
 			evaluateGuardPolicy("new-or-existing-session", undefined, {
 				...ctx,
-				voiceChannelId: undefined,
+				voiceChannel: undefined,
 			}),
 		).toEqual(err("user-not-in-voice-channel"));
 	});

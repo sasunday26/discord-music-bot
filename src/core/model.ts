@@ -1,10 +1,14 @@
+type VoiceChannel = {
+	readonly id: string;
+	readonly botCanJoin: boolean;
+	readonly botCanSpeak: boolean;
+};
+
 type CommandCtx = {
 	readonly interactionId: string;
 	readonly guildId: string;
 	readonly channelId: string;
-	readonly voiceChannelId: string | undefined;
-	readonly botCanJoinVoice: boolean;
-	readonly botCanSpeakVoice: boolean;
+	readonly voiceChannel: VoiceChannel | undefined;
 	readonly nowMs: number;
 };
 
@@ -326,4 +330,5 @@ export {
 	type Track,
 	type TrackEndReason,
 	type Transition,
+	type VoiceChannel,
 };

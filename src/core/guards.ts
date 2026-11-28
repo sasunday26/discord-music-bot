@@ -1,4 +1,4 @@
-import type { CommandCtx, GuildSession } from "./model.ts";
+import type { CommandCtx, GuildSession, VoiceChannel } from "./model.ts";
 import { err, ok, type Result } from "./result.ts";
 
 type GuardPolicy = "existing-session" | "new-or-existing-session";
@@ -38,12 +38,12 @@ const guardNewOrExistingSession = (
 const guardNewSession = (
 	ctx: CommandCtx,
 ): Result<Extract<GuardOutcome, { kind: "new-session" }>, GuardError> =>
-	requireBotCanUseVoiceChannel(ctx).andThen(() =>
-		requireUserInVoiceChannel(ctx).map((i) => ({
+	requireUserInVoiceChannel(ctx.voiceChannel)
+		.andThen(requireBotCanUseVoiceChannel)
+		.map((v) => ({
 			kind: "new-session",
-			callerVoiceChannelId: i,
-		})),
-	);
+			callerVoiceChannelId: v.id,
+		}));
 
 const guardExistingSession = (
 	session: GuildSession | undefined,
@@ -52,13 +52,13 @@ const guardExistingSession = (
 	const s = requireSession(session);
 	if (s.isErr()) return err(s.error);
 
-	const i = requireUserInVoiceChannel(ctx);
+	const i = requireUserInVoiceChannel(ctx.voiceChannel);
 	if (i.isErr()) return err(i.error);
 
 	const h = requireHomeChannel(s.value, ctx.channelId);
 	if (h.isErr()) return err(h.error);
 
-	const v = requireSameVoiceChannel(s.value, i.value);
+	const v = requireSameVoiceChannel(s.value, i.value.id);
 	if (v.isErr()) return err(v.error);
 
 	return ok({ kind: "existing-session", session: s.value });
@@ -77,17 +77,17 @@ const requireSession = (
 	session === undefined ? err("no-active-session") : ok(session);
 
 const requireUserInVoiceChannel = (
-	ctx: Pick<CommandCtx, "voiceChannelId">,
-): Result<string, "user-not-in-voice-channel"> =>
-	ctx.voiceChannelId === undefined
+	voiceChannel: VoiceChannel | undefined,
+): Result<VoiceChannel, "user-not-in-voice-channel"> =>
+	voiceChannel === undefined
 		? err("user-not-in-voice-channel")
-		: ok(ctx.voiceChannelId);
+		: ok(voiceChannel);
 
 const requireBotCanUseVoiceChannel = (
-	ctx: Pick<CommandCtx, "botCanJoinVoice" | "botCanSpeakVoice">,
-): Result<void, "not-enough-permissions"> =>
-	ctx.botCanJoinVoice && ctx.botCanSpeakVoice
-		? ok(undefined)
+	voiceChannel: VoiceChannel,
+): Result<VoiceChannel, "not-enough-permissions"> =>
+	voiceChannel.botCanJoin && voiceChannel.botCanSpeak
+		? ok(voiceChannel)
 		: err("not-enough-permissions");
 
 const requireSameVoiceChannel = (
